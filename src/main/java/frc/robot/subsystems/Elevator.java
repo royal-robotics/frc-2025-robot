@@ -20,7 +20,7 @@ public class Elevator extends SubsystemBase {
     private StatusSignal<Angle> elevatorPosition2;
     private StatusSignal<Voltage> elevatorVoltage2;
 
-    public Elevator () {
+    public Elevator() {
         elevatorPosition1 = mainElevator1.getPosition();
         elevatorPosition2 = mainElevator2.getPosition();
         elevatorVoltage1 = mainElevator1.getMotorVoltage();
