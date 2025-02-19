@@ -39,7 +39,7 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    //public final Elevator elevator = new Elevator();
+    public final Elevator elevator = new Elevator();
     public final Intake intake = new Intake();
     public final Climber climber = new Climber();
 
@@ -75,6 +75,10 @@ public class RobotContainer {
         joystick.rightTrigger().whileTrue(climber.setVoltageForward());
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        joystick.povUp().whileTrue(elevator.setVoltageForward1());
+        joystick.povDown().whileTrue(elevator.setVoltageBackward1());
+        joystick.povLeft().whileTrue(elevator.setVoltageForward2());
+        joystick.povRight().whileTrue(elevator.setVoltageBackward2());
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

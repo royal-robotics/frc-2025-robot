@@ -1,6 +1,6 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
@@ -40,21 +40,21 @@ public class Climber extends SubsystemBase {
     }
 
     public double climberPosition() {
-        return climbMotorPosition.getValueAsDouble();
+        return climbMotorPosition.getValue().in(Rotations);
     }
 
     public double climberVoltage() {
-        return climbMotorVoltage.getValueAsDouble();
+        return climbMotorVoltage.getValue().in(Volts);
     }
 
-    public Command setVoltageForward () {
+    public Command setVoltageForward() {
         return this.startEnd(
             () -> climbMotor.setControl(climbVoltageRequest.withOutput(Volts.of(1))),
             () -> climbMotor.setControl(climbVoltageRequest.withOutput(Volts.of(0)))
         );
     }
 
-    public Command setVoltageBack () {
+    public Command setVoltageBack() {
         return this.startEnd(
             () -> climbMotor.setControl(climbVoltageRequest.withOutput(Volts.of(-1))),
             () -> climbMotor.setControl(climbVoltageRequest.withOutput(Volts.of(0)))
