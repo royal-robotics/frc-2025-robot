@@ -69,16 +69,17 @@ public class RobotContainer {
         joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-        joystick.b().whileTrue(intake.setVoltage1());
-        joystick.a().whileTrue(intake.setVoltage2());
-        joystick.leftTrigger().whileTrue(climber.setVoltageBack());
-        joystick.rightTrigger().whileTrue(climber.setVoltageForward());
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
-        joystick.povUp().whileTrue(elevator.setVoltageForward1());
-        joystick.povDown().whileTrue(elevator.setVoltageBackward1());
-        joystick.povLeft().whileTrue(elevator.setVoltageForward2());
-        joystick.povRight().whileTrue(elevator.setVoltageBackward2());
+
+        joystick.b().whileTrue(intake.setVoltageForward());
+        joystick.a().whileTrue(intake.setVoltageBackward());
+
+        joystick.povUp().whileTrue(elevator.setVoltageForward());
+        joystick.povDown().whileTrue(elevator.setVoltageBackward());
+
+        joystick.rightTrigger().whileTrue(climber.setVoltageForward());
+        joystick.leftTrigger().whileTrue(climber.setVoltageBack());
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
