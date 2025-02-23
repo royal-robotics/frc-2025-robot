@@ -28,11 +28,17 @@ public class Climber extends SubsystemBase {
     private final TalonFX climber = new TalonFX(11);
     private final CANcoder climberEncoder = new CANcoder(5);
 
-    private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs();
-    private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs();
-    private final FeedbackConfigs feedbackConfigs = new FeedbackConfigs();
-    private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs();
-    private final Angle climberEncoderOffset = Degrees.of(0.0);
+    private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs()
+        .withNeutralMode(NeutralModeValue.Brake);
+    private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
+        .withStatorCurrentLimit(Amps.of(80))
+        .withStatorCurrentLimitEnable(true);
+    private final FeedbackConfigs feedbackConfigs = new FeedbackConfigs()
+        .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+        .withFeedbackRemoteSensorID(5);
+    private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs()
+        .withMagnetOffset(Degrees.of(-68.5))
+        .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
     
     private final StatusSignal<Angle> climberPosition;
     private final StatusSignal<Voltage> climberVoltage;
@@ -40,18 +46,13 @@ public class Climber extends SubsystemBase {
 
     private final VoltageOut voltageRequest = new VoltageOut(Volts.of(0));
 
+    // -73, 45, 22
+
     public Climber() {
-        climber.getConfigurator().apply(outputConfigs
-            .withNeutralMode(NeutralModeValue.Brake));
-        climber.getConfigurator().apply(currentConfigs
-            .withStatorCurrentLimit(Amps.of(80))
-            .withStatorCurrentLimitEnable(true));
-        climber.getConfigurator().apply(feedbackConfigs
-            .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-            .withFeedbackRemoteSensorID(5));
-        climberEncoder.getConfigurator().apply(encoderConfigs
-            .withMagnetOffset(climberEncoderOffset)
-            .withSensorDirection(SensorDirectionValue.Clockwise_Positive));
+        climber.getConfigurator().apply(outputConfigs);
+        climber.getConfigurator().apply(currentConfigs);
+        climber.getConfigurator().apply(feedbackConfigs);
+        climberEncoder.getConfigurator().apply(encoderConfigs);
 
         climberPosition = climber.getPosition();
         climberVoltage = climber.getMotorVoltage();
@@ -72,6 +73,10 @@ public class Climber extends SubsystemBase {
 
     public double climberVoltage() {
         return climberVoltage.getValue().in(Volts);
+    }
+
+    public double climberEncoderPosition() {
+        return climberEncoderPosition.getValue().in(Degrees);
     }
 
     public Command setClimberForward() {

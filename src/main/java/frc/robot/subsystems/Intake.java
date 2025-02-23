@@ -5,8 +5,10 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -20,6 +22,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,8 +33,9 @@ public class Intake extends SubsystemBase {
     private final SparkMax pivot = new SparkMax(1, MotorType.kBrushless);
     private final SparkMax pivotFollow = new SparkMax(2, MotorType.kBrushless);
     private final TalonFX intake = new TalonFX(12);
-    private final TalonFX holder = new TalonFX(13);
+    //private final TalonFX holder = new TalonFX(13);
     private final TalonFX scorer = new TalonFX(14);
+    private final CANcoder pivotEncoder = new CANcoder(6);
 
     private final SparkBaseConfig pivotConfig = new SparkMaxConfig()
         .idleMode(IdleMode.kBrake)
@@ -40,20 +44,26 @@ public class Intake extends SubsystemBase {
     private final SparkBaseConfig pivotConfigFollow = new SparkMaxConfig()
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit(80)
-        .follow(pivot);
+        .follow(pivot,true);
     private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs()
         .withNeutralMode(NeutralModeValue.Brake);
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
         .withStatorCurrentLimit(Amps.of(80))
         .withStatorCurrentLimitEnable(true);
+    private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs()
+        .withMagnetOffset(Degrees.of(-76.5));
 
     private final RelativeEncoder pivotPosition;
     private final RelativeEncoder pivotPositionFollow;
     private final StatusSignal<Voltage> intakeVoltage;
-    private final StatusSignal<Voltage> holderVoltage;
+    //private final StatusSignal<Voltage> holderVoltage;
     private final StatusSignal<Voltage> scorerVoltage;
+    private final StatusSignal<Angle> pivotEncoderPosition;
 
     private final VoltageOut voltageRequest = new VoltageOut(Volts.of(0));
+
+    //private final Angle pivotMinPosition = Degrees.of(-33.0);
+    //private final Angle pivotMaxPosition = Degrees.of(91.0);
 
     public Intake() {
         pivot.configure(pivotConfig,
@@ -64,21 +74,27 @@ public class Intake extends SubsystemBase {
             PersistMode.kPersistParameters);
         intake.getConfigurator().apply(outputConfigs);
         intake.getConfigurator().apply(currentConfigs);
-        holder.getConfigurator().apply(outputConfigs);
-        holder.getConfigurator().apply(currentConfigs);
+        //holder.getConfigurator().apply(outputConfigs);
+        //holder.getConfigurator().apply(currentConfigs);
         scorer.getConfigurator().apply(outputConfigs);
         scorer.getConfigurator().apply(currentConfigs);
+        pivotEncoder.getConfigurator().apply(encoderConfigs);
 
         pivotPosition = pivot.getEncoder();
         pivotPositionFollow = pivotFollow.getEncoder();
         intakeVoltage = intake.getMotorVoltage();
-        holderVoltage = holder.getMotorVoltage();
+        //holderVoltage = holder.getMotorVoltage();
         scorerVoltage = scorer.getMotorVoltage();
+        pivotEncoderPosition = pivotEncoder.getAbsolutePosition();
 
+        //BaseStatusSignal.setUpdateFrequencyForAll(50,
+        //    intakeVoltage, holderVoltage, scorerVoltage, pivotEncoderPosition);
         BaseStatusSignal.setUpdateFrequencyForAll(50,
-            intakeVoltage, holderVoltage, scorerVoltage);
+            intakeVoltage, scorerVoltage, pivotEncoderPosition);
+        //ParentDevice.optimizeBusUtilizationForAll(
+        //    intake, holder, scorer);
         ParentDevice.optimizeBusUtilizationForAll(
-            intake, holder, scorer);
+            intake, scorer);
 
         SmartDashboard.putData("IntakeCoast", setCoast());
         SmartDashboard.putData("IntakeBrake", setBrake());
@@ -104,66 +120,70 @@ public class Intake extends SubsystemBase {
         return intakeVoltage.getValue().in(Volts);
     }
 
-    public double holderVoltage() {
+    /*public double holderVoltage() {
         return holderVoltage.getValue().in(Volts);
-    }
+    }*/
 
     public double scorerVoltage() {
         return scorerVoltage.getValue().in(Volts);
     }
 
+    public double pivotEncoderPosition() {
+        return pivotEncoderPosition.getValue().in(Degrees);
+    }
+
     public Command setPivotForward() {
         return startEnd(
-            () -> pivot.setVoltage(Volts.of(1)),
+            () -> pivot.setVoltage(Volts.of(3)),
             () -> pivot.setVoltage(Volts.of(0))
         );
     }
 
     public Command setPivotBackward() {
         return startEnd(
-            () -> pivot.setVoltage(Volts.of(-1)),
+            () -> pivot.setVoltage(Volts.of(-3)),
             () -> pivot.setVoltage(Volts.of(0))
         );
     }
 
     public Command setIntakeForward() {
         return startEnd(
-            () -> intake.setControl(voltageRequest.withOutput(Volts.of(6))),
+            () -> intake.setControl(voltageRequest.withOutput(Volts.of(3))),
             () -> intake.setControl(voltageRequest.withOutput(Volts.of(0)))
         );
     }
 
     public Command setIntakeBackward() {
         return startEnd(
-            () -> intake.setControl(voltageRequest.withOutput(Volts.of(-6))),
+            () -> intake.setControl(voltageRequest.withOutput(Volts.of(-3))),
             () -> intake.setControl(voltageRequest.withOutput(Volts.of(0)))
         );
     }
 
-    public Command setHolderForward() {
+    /*public Command setHolderForward() {
         return startEnd(
-            () -> holder.setControl(voltageRequest.withOutput(Volts.of(6))),
+            () -> holder.setControl(voltageRequest.withOutput(Volts.of(3))),
             () -> holder.setControl(voltageRequest.withOutput(Volts.of(0)))
         );
     }
 
     public Command setHolderBackward() {
         return startEnd(
-            () -> holder.setControl(voltageRequest.withOutput(Volts.of(-6))),
+            () -> holder.setControl(voltageRequest.withOutput(Volts.of(-3))),
             () -> holder.setControl(voltageRequest.withOutput(Volts.of(0)))
         );
-    }
+    }*/
 
     public Command setScorerForward() {
         return startEnd(
-            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(6))),
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(3))),
             () -> scorer.setControl(voltageRequest.withOutput(Volts.of(0)))
         );
     }
 
     public Command setScorerBackward() {
         return startEnd(
-            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-6))),
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-3))),
             () -> scorer.setControl(voltageRequest.withOutput(Volts.of(0)))
         );
     }
@@ -179,7 +199,7 @@ public class Intake extends SubsystemBase {
                 ResetMode.kNoResetSafeParameters,
                 PersistMode.kNoPersistParameters);
             intake.setNeutralMode(NeutralModeValue.Coast);
-            holder.setNeutralMode(NeutralModeValue.Coast);
+            //holder.setNeutralMode(NeutralModeValue.Coast);
             scorer.setNeutralMode(NeutralModeValue.Coast);
         }).ignoringDisable(true);
     }
@@ -195,14 +215,15 @@ public class Intake extends SubsystemBase {
                 ResetMode.kNoResetSafeParameters,
                 PersistMode.kNoPersistParameters);
             intake.setNeutralMode(NeutralModeValue.Brake);
-            holder.setNeutralMode(NeutralModeValue.Brake);
+            //holder.setNeutralMode(NeutralModeValue.Brake);
             scorer.setNeutralMode(NeutralModeValue.Brake);
         }).ignoringDisable(true);
     }
 
     public void periodic() {
+        //BaseStatusSignal.refreshAll(
+        //    intakeVoltage, holderVoltage, scorerVoltage, pivotEncoderPosition);
         BaseStatusSignal.refreshAll(
-            intakeVoltage, holderVoltage, scorerVoltage
-        );
+            intakeVoltage, scorerVoltage, pivotEncoderPosition);
     }
 }
