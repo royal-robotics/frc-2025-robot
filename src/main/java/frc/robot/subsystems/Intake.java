@@ -7,17 +7,20 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
@@ -37,67 +40,100 @@ public class Intake extends SubsystemBase {
     private final TalonFX scorer = new TalonFX(14);
     private final CANcoder pivotEncoder = new CANcoder(6);
 
-    private final SparkBaseConfig pivotConfig = new SparkMaxConfig()
-        .idleMode(IdleMode.kBrake)
-        .inverted(true)
-        .smartCurrentLimit(80);
-    private final SparkBaseConfig pivotConfigFollow = new SparkMaxConfig()
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(80)
-        .follow(pivot,true);
+    private final SparkMaxConfig pivotConfig = new SparkMaxConfig();
+    private final SparkMaxConfig pivotConfigFollow = new SparkMaxConfig();
     private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs()
         .withNeutralMode(NeutralModeValue.Brake);
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
         .withStatorCurrentLimit(Amps.of(80))
         .withStatorCurrentLimitEnable(true);
+    private final Slot0Configs scorerPIDConfigs = new Slot0Configs()
+        .withKP(2)
+        .withKI(0)
+        .withKD(0);
     private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs()
         .withMagnetOffset(Degrees.of(-76.5));
 
     private final RelativeEncoder pivotPosition;
     private final RelativeEncoder pivotPositionFollow;
+    private final SparkClosedLoopController pivotController;
     private final StatusSignal<Voltage> intakeVoltage;
     //private final StatusSignal<Voltage> holderVoltage;
+    private final StatusSignal<Angle> scorerPosition;
     private final StatusSignal<Voltage> scorerVoltage;
     private final StatusSignal<Angle> pivotEncoderPosition;
 
     private final VoltageOut voltageRequest = new VoltageOut(Volts.of(0));
+    private final PositionVoltage positionRequest = new PositionVoltage(Rotations.of(0.0));
 
     //private final Angle pivotMinPosition = Degrees.of(-33.0);
     //private final Angle pivotMaxPosition = Degrees.of(91.0);
 
+    private boolean pivotOverride = false;
+    private double pivotOverrideValue = 0.0;
+
     public Intake() {
+        pivotConfig
+            .idleMode(IdleMode.kBrake)
+            .inverted(true)
+            .smartCurrentLimit(80);
+        pivotConfig.closedLoop
+            .p(1.0)
+            .i(0.0)
+            .d(0.0);
         pivot.configure(pivotConfig,
             ResetMode.kResetSafeParameters,
             PersistMode.kPersistParameters);
+
+        pivotConfigFollow
+            .idleMode(IdleMode.kBrake)
+            .smartCurrentLimit(80)
+            .follow(pivot,true);
+        pivotConfigFollow.closedLoop
+            .p(1.0)
+            .i(0.0)
+            .d(0.0);
         pivotFollow.configure(pivotConfigFollow,
             ResetMode.kResetSafeParameters,
             PersistMode.kPersistParameters);
+
         intake.getConfigurator().apply(outputConfigs);
         intake.getConfigurator().apply(currentConfigs);
+
         //holder.getConfigurator().apply(outputConfigs);
         //holder.getConfigurator().apply(currentConfigs);
+
         scorer.getConfigurator().apply(outputConfigs);
         scorer.getConfigurator().apply(currentConfigs);
+        scorer.getConfigurator().apply(scorerPIDConfigs);
+
         pivotEncoder.getConfigurator().apply(encoderConfigs);
 
         pivotPosition = pivot.getEncoder();
         pivotPositionFollow = pivotFollow.getEncoder();
+        pivotController = pivot.getClosedLoopController();
         intakeVoltage = intake.getMotorVoltage();
         //holderVoltage = holder.getMotorVoltage();
+        scorerPosition = scorer.getPosition();
         scorerVoltage = scorer.getMotorVoltage();
         pivotEncoderPosition = pivotEncoder.getAbsolutePosition();
 
         //BaseStatusSignal.setUpdateFrequencyForAll(50,
-        //    intakeVoltage, holderVoltage, scorerVoltage, pivotEncoderPosition);
+        //    intakeVoltage, holderVoltage, scorerPosition, scorerVoltage, pivotEncoderPosition);
         BaseStatusSignal.setUpdateFrequencyForAll(50,
-            intakeVoltage, scorerVoltage, pivotEncoderPosition);
+            intakeVoltage, scorerPosition, scorerVoltage, pivotEncoderPosition);
         //ParentDevice.optimizeBusUtilizationForAll(
         //    intake, holder, scorer);
-        ParentDevice.optimizeBusUtilizationForAll(
-            intake, scorer);
+        //ParentDevice.optimizeBusUtilizationForAll(
+        //    intake, scorer, pivotEncoder);
+
+        scorerPosition.waitForUpdate(0.02);
+        scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()));
 
         SmartDashboard.putData("IntakeCoast", setCoast());
         SmartDashboard.putData("IntakeBrake", setBrake());
+        SmartDashboard.putBoolean("PivotOverride", pivotOverride);
+        SmartDashboard.putNumber("PivotOverrideValue", pivotOverrideValue);
     }
 
     public double pivotPosition() {
@@ -123,6 +159,10 @@ public class Intake extends SubsystemBase {
     /*public double holderVoltage() {
         return holderVoltage.getValue().in(Volts);
     }*/
+
+    public double scorerPosition() {
+        return scorerPosition.getValue().in(Rotations);
+    }
 
     public double scorerVoltage() {
         return scorerVoltage.getValue().in(Volts);
@@ -177,14 +217,14 @@ public class Intake extends SubsystemBase {
     public Command setScorerForward() {
         return startEnd(
             () -> scorer.setControl(voltageRequest.withOutput(Volts.of(3))),
-            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(0)))
+            () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
         );
     }
 
     public Command setScorerBackward() {
         return startEnd(
             () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-3))),
-            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(0)))
+            () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
         );
     }
 
@@ -222,8 +262,18 @@ public class Intake extends SubsystemBase {
 
     public void periodic() {
         //BaseStatusSignal.refreshAll(
-        //    intakeVoltage, holderVoltage, scorerVoltage, pivotEncoderPosition);
+        //    intakeVoltage, holderVoltage, scorerPosition, scorerVoltage, pivotEncoderPosition);
         BaseStatusSignal.refreshAll(
-            intakeVoltage, scorerVoltage, pivotEncoderPosition);
+            intakeVoltage, scorerPosition, scorerVoltage, pivotEncoderPosition);
+
+        if (SmartDashboard.getBoolean("PivotOverride", pivotOverride)) {
+            pivotController.setReference(
+                SmartDashboard.getNumber("PivotOverrideValue", pivotOverrideValue),
+                ControlType.kPosition
+            );
+        } else {
+            pivotOverrideValue = pivotPosition();
+            SmartDashboard.putNumber("PivotOverrideValue", pivotOverrideValue);
+        }
     }
 }

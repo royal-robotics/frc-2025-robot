@@ -23,6 +23,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -86,11 +87,9 @@ public class Elevator extends SubsystemBase {
     private final PositionVoltage positionRequest = new PositionVoltage(Degrees.of(0.0));
 
     private final DigitalInput bottom = new DigitalInput(0);
+    private final AnalogInput coral = new AnalogInput(0);
 
-    //private final Angle armMinPosition = Degrees.of(-35.0);
-    //private final Angle armMaxPosition = Degrees.of(170.0);
-    //private final Angle wristMinPosition = Degrees.of(-98.0);
-    //private final Angle wristMaxPosition = Degrees.of(135.0);
+    private final double elevatorRotationsToInches = 1.0;
 
     private boolean elevatorOverride = false;
     private double elevatorOverrideValue = 0.0;
@@ -129,8 +128,8 @@ public class Elevator extends SubsystemBase {
         BaseStatusSignal.setUpdateFrequencyForAll(50,
             elevatorPosition, elevatorVoltage, armPosition, armVoltage,
             wristPosition, wristVoltage, armEncoderPosition, wristEncoderPosition);
-        ParentDevice.optimizeBusUtilizationForAll(
-            elevator, elevatorFollow, arm, wrist, armEncoder, wristEncoder);
+        //ParentDevice.optimizeBusUtilizationForAll(
+        //    elevator, elevatorFollow, arm, wrist, armEncoder, wristEncoder);
 
         elevatorFollow.setControl(followRequest);
 
@@ -146,6 +145,10 @@ public class Elevator extends SubsystemBase {
 
     public double elevatorPosition() {
         return elevatorPosition.getValue().in(Rotations);
+    }
+
+    public double elevatorHeight() {
+        return elevatorPosition() * elevatorRotationsToInches;
     }
 
     public double elevatorVoltage() {
@@ -170,6 +173,10 @@ public class Elevator extends SubsystemBase {
 
     public boolean bottomLimit() {
         return bottom.get();
+    }
+
+    public double coralLimit() {
+        return coral.getAverageVoltage();
     }
 
     public Command setElevatorForward() {
@@ -235,13 +242,14 @@ public class Elevator extends SubsystemBase {
     public void periodic() {
         BaseStatusSignal.refreshAll(
             elevatorPosition, elevatorVoltage, armPosition, armVoltage,
-            wristPosition, wristVoltage);
+            wristPosition, wristVoltage, armEncoderPosition, wristEncoderPosition);
 
         if (SmartDashboard.getBoolean("ElevatorOverride", elevatorOverride)) {
             elevator.setControl(positionRequest.withPosition(Rotations.of(
-                SmartDashboard.getNumber("ElevatorOverrideValue", elevatorOverrideValue))));
+                SmartDashboard.getNumber("ElevatorOverrideValue", elevatorOverrideValue)
+                / elevatorRotationsToInches)));
         } else {
-            elevatorOverrideValue = elevatorPosition();
+            elevatorOverrideValue = elevatorHeight();
             SmartDashboard.putNumber("ElevatorOverrideValue", elevatorOverrideValue);
         }
 

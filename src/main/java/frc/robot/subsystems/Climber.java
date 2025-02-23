@@ -60,8 +60,8 @@ public class Climber extends SubsystemBase {
 
         BaseStatusSignal.setUpdateFrequencyForAll(50,
             climberPosition, climberVoltage, climberEncoderPosition);
-        ParentDevice.optimizeBusUtilizationForAll(
-            climber);
+        //ParentDevice.optimizeBusUtilizationForAll(
+        //    climber, climberEncoder);
 
         SmartDashboard.putData("ClimberCoast", setCoast());
         SmartDashboard.putData("ClimberBrake", setBrake());
