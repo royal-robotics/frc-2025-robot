@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Climber;
@@ -76,32 +75,26 @@ public class RobotContainer {
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
         //driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        //driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        //driver.back().and(driver.a()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
         //driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        //driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        //driver.start().and(driver.a()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
         // reset the field-centric heading on left bumper press
         driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         driver.povDown().whileTrue(intake.setPivotForward());
         driver.povUp().whileTrue(intake.setPivotBackward());
 
-        driver.a().whileTrue(intake.setIntakeForward());
-        driver.y().whileTrue(intake.setIntakeBackward());
-
-        //driver.b().whileTrue(intake.setHolderForward());
-        //driver.x().whileTrue(intake.setHolderBackward());
+        driver.b().whileTrue(intake.setIntakeForward());
+        driver.x().whileTrue(intake.setIntakeBackward());
 
         driver.rightTrigger().whileTrue(intake.setScorerForward());
         driver.leftTrigger().whileTrue(intake.setScorerBackward());
 
-        operator.povUp().whileTrue(elevator.setElevatorForward());
-        operator.povDown().whileTrue(elevator.setElevatorBackward());
-
-        operator.a().whileTrue(elevator.setArmForward());
-        operator.y().whileTrue(elevator.setArmBackward());
-
-        operator.b().whileTrue(elevator.setWristForward());
-        operator.x().whileTrue(elevator.setWristBackward());
+        operator.leftBumper().onTrue(elevator.moveToCoralStation());
+        operator.a().onTrue(elevator.moveToL1());
+        operator.b().onTrue(elevator.moveToL2());
+        operator.x().onTrue(elevator.moveToL3());
+        operator.y().onTrue(elevator.moveToL4());
 
         operator.rightTrigger().whileTrue(climber.setClimberForward());
         operator.leftTrigger().whileTrue(climber.setClimberBackward());

@@ -46,7 +46,7 @@ public class Climber extends SubsystemBase {
 
     private final VoltageOut voltageRequest = new VoltageOut(Volts.of(0));
 
-    // -73, 45, 22
+    // min -73, max 45, start 22
 
     public Climber() {
         climber.getConfigurator().apply(outputConfigs);
@@ -60,8 +60,8 @@ public class Climber extends SubsystemBase {
 
         BaseStatusSignal.setUpdateFrequencyForAll(50,
             climberPosition, climberVoltage, climberEncoderPosition);
-        //ParentDevice.optimizeBusUtilizationForAll(
-        //    climber, climberEncoder);
+        ParentDevice.optimizeBusUtilizationForAll(
+            climber, climberEncoder);
 
         SmartDashboard.putData("ClimberCoast", setCoast());
         SmartDashboard.putData("ClimberBrake", setBrake());
