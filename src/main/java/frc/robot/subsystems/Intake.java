@@ -14,6 +14,7 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
@@ -30,6 +31,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 @Logged
@@ -47,16 +49,24 @@ public class Intake extends SubsystemBase {
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
         .withStatorCurrentLimit(Amps.of(80))
         .withStatorCurrentLimitEnable(true);
+    private final Slot0Configs IntakePIDConfigs = new Slot0Configs()
+        .withKP(20)
+        .withKI(0)
+        .withKD(0);
     private final Slot0Configs scorerPIDConfigs = new Slot0Configs()
-        .withKP(2)
+        .withKP(20)
         .withKI(0)
         .withKD(0);
     private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs()
-        .withMagnetOffset(Degrees.of(-76.5));
+        .withMagnetOffset(Degrees.of(77.1))
+        .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
+
+    private final double pivotGearRatio = 88.89;
 
     private final RelativeEncoder pivotPosition;
     private final RelativeEncoder pivotPositionFollow;
     private final SparkClosedLoopController pivotController;
+    private final StatusSignal<Angle> intakePosition;
     private final StatusSignal<Voltage> intakeVoltage;
     private final StatusSignal<Angle> scorerPosition;
     private final StatusSignal<Voltage> scorerVoltage;
@@ -81,7 +91,8 @@ public class Intake extends SubsystemBase {
         pivotConfig.closedLoop
             .p(1.0)
             .i(0.0)
-            .d(0.0);
+            .d(0.0)
+            .outputRange(-0.5,0.5);
         pivot.configure(pivotConfig,
             ResetMode.kResetSafeParameters,
             PersistMode.kPersistParameters);
@@ -93,16 +104,15 @@ public class Intake extends SubsystemBase {
         pivotConfigFollow.closedLoop
             .p(1.0)
             .i(0.0)
-            .d(0.0);
+            .d(0.0)
+            .outputRange(-0.5,0.5);
         pivotFollow.configure(pivotConfigFollow,
             ResetMode.kResetSafeParameters,
             PersistMode.kPersistParameters);
 
         intake.getConfigurator().apply(outputConfigs);
         intake.getConfigurator().apply(currentConfigs);
-
-        //holder.getConfigurator().apply(outputConfigs);
-        //holder.getConfigurator().apply(currentConfigs);
+        intake.getConfigurator().apply(IntakePIDConfigs);
 
         scorer.getConfigurator().apply(outputConfigs);
         scorer.getConfigurator().apply(currentConfigs);
@@ -113,18 +123,27 @@ public class Intake extends SubsystemBase {
         pivotPosition = pivot.getEncoder();
         pivotPositionFollow = pivotFollow.getEncoder();
         pivotController = pivot.getClosedLoopController();
+        intakePosition = intake.getPosition();
         intakeVoltage = intake.getMotorVoltage();
         scorerPosition = scorer.getPosition();
         scorerVoltage = scorer.getMotorVoltage();
         pivotEncoderPosition = pivotEncoder.getAbsolutePosition();
 
         BaseStatusSignal.setUpdateFrequencyForAll(50,
-            intakeVoltage, scorerPosition, scorerVoltage, pivotEncoderPosition);
+            intakePosition, intakeVoltage, scorerPosition, scorerVoltage,
+            pivotEncoderPosition);
         ParentDevice.optimizeBusUtilizationForAll(
             intake, scorer, pivotEncoder);
 
+        intakePosition.waitForUpdate(0.02);
+        intake.setControl(positionRequest.withPosition(intakePosition.getValue()));
+
         scorerPosition.waitForUpdate(0.02);
         scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()));
+
+        pivotEncoderPosition.waitForUpdate(0.02);
+        pivotPosition.setPosition(pivotEncoderPosition.getValue().in(Rotations) * pivotGearRatio);
+        pivotPositionFollow.setPosition(pivotEncoderPosition.getValue().in(Rotations) * pivotGearRatio);
 
         SmartDashboard.putData("IntakeCoast", setCoast());
         SmartDashboard.putData("IntakeBrake", setBrake());
@@ -146,6 +165,10 @@ public class Intake extends SubsystemBase {
 
     public double pivotOutputFollow() {
         return pivotFollow.getAppliedOutput();
+    }
+
+    public double intakePosition() {
+        return intakePosition.getValue().in(Rotations);
     }
 
     public double intakeVoltage() {
@@ -242,7 +265,7 @@ public class Intake extends SubsystemBase {
 
     public void periodic() {
         BaseStatusSignal.refreshAll(
-            intakeVoltage, scorerPosition, scorerVoltage, pivotEncoderPosition);
+            intakePosition, intakeVoltage, scorerPosition, scorerVoltage, pivotEncoderPosition);
 
         if (SmartDashboard.getBoolean("PivotOverride", pivotOverride)) {
             pivotController.setReference(
@@ -252,5 +275,25 @@ public class Intake extends SubsystemBase {
             pivotOverrideValue = pivotPosition();
             SmartDashboard.putNumber("PivotOverrideValue", pivotOverrideValue);
         }
+    }
+
+    public Command intakeAlgae() {
+        return startEnd(
+            () -> {
+                pivotController.setReference(-1.8, ControlType.kPosition);
+                intake.setControl(voltageRequest.withOutput(3));
+            },
+            () -> {
+                intake.setControl(positionRequest.withPosition(intakePosition.getValue()));
+                pivotController.setReference(-20.5, ControlType.kPosition);
+            }
+        );
+    }
+
+    public Command scoreAlgae() {
+        return startEnd(
+            () -> intake.setControl(voltageRequest.withOutput(-3.0)),
+            () -> intake.setControl(positionRequest.withPosition(intakePosition.getValue()))
+        );
     }
 }

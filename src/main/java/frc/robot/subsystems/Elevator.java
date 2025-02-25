@@ -10,6 +10,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -43,9 +44,13 @@ public class Elevator extends SubsystemBase {
 
     private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs()
         .withNeutralMode(NeutralModeValue.Brake)
-        .withInverted(InvertedValue.Clockwise_Positive)
-        .withPeakForwardDutyCycle(0.25)
-        .withPeakReverseDutyCycle(-0.25);
+        .withInverted(InvertedValue.Clockwise_Positive);
+    private final VoltageConfigs voltageConfigs = new VoltageConfigs()
+        .withPeakForwardVoltage(Volts.of(6.0))
+        .withPeakReverseVoltage(Volts.of(-6.0));
+    private final VoltageConfigs slowVoltageConfigs = new VoltageConfigs()
+        .withPeakForwardVoltage(Volts.of(3.0))
+        .withPeakReverseVoltage(Volts.of(-3.0));
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
         .withStatorCurrentLimit(Amps.of(80))
         .withStatorCurrentLimitEnable(true);
@@ -74,7 +79,8 @@ public class Elevator extends SubsystemBase {
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(8);
     private final MagnetSensorConfigs armEncoderConfigs = new MagnetSensorConfigs()
-        .withMagnetOffset(Degrees.of(244.0));
+        .withMagnetOffset(Degrees.of(-116.0))
+        .withAbsoluteSensorDiscontinuityPoint(Degrees.of(200.0));
     private final MagnetSensorConfigs wristEncoderConfigs = new MagnetSensorConfigs()
         .withMagnetOffset(Degrees.of(38.0));
 
@@ -143,10 +149,10 @@ public class Elevator extends SubsystemBase {
 
     private final DigitalInput bottom = new DigitalInput(0);
 
-    private final double coralElevatorInitialSetpoint = 5.0;
+    private final double coralElevatorInitialSetpoint = 4.0;
     private final double coralWristSetpoint = -84.0;
     private final double coralArmSetpoint = 115.5;
-    private final double coralElevatorSetpoint = 10.6;
+    private final double coralElevatorSetpoint = 10.5;
 
     private final double l1ArmSetpoint = 70.2;
     private final double l1WristSetpoint = -53.1;
@@ -164,6 +170,14 @@ public class Elevator extends SubsystemBase {
     private final double l4WristSetpoint = 45.8;
     private final double l4ElevatorSetpoint = 31.88;
 
+    private final double algaeLowArmSetpoint = 33.3;
+    private final double algaeLowWristSetpoint = -77.6;
+    private final double algaeLowElevatorSetpoint = 15.8;
+
+    private final double algaeHighArmSetpoint = 33.3;
+    private final double algaeHighWristSetpoint = -77.6;
+    private final double algaeHighElevatorSetpoint = 25.45;
+
     private final double elevatorRotationsToInches = 0.649;
 
     private boolean elevatorOverride = false;
@@ -175,16 +189,20 @@ public class Elevator extends SubsystemBase {
 
     public Elevator() {
         elevator.getConfigurator().apply(outputConfigs);
+        elevator.getConfigurator().apply(voltageConfigs);
         elevator.getConfigurator().apply(currentConfigs);
         elevator.getConfigurator().apply(elevatorPIDConfigs);
         elevatorFollow.getConfigurator().apply(outputConfigs);
+        elevatorFollow.getConfigurator().apply(voltageConfigs);
         elevatorFollow.getConfigurator().apply(currentConfigs);
         elevatorFollow.getConfigurator().apply(elevatorPIDConfigs);
         arm.getConfigurator().apply(outputConfigs);
+        arm.getConfigurator().apply(slowVoltageConfigs);
         arm.getConfigurator().apply(currentConfigs);
         arm.getConfigurator().apply(armFeedbackConfigs);
         arm.getConfigurator().apply(armPIDConfigs);
         wrist.getConfigurator().apply(outputConfigs);
+        wrist.getConfigurator().apply(slowVoltageConfigs);
         wrist.getConfigurator().apply(currentConfigs);
         wrist.getConfigurator().apply(wristFeedbackConfigs);
         wrist.getConfigurator().apply(wristPIDConfigs);
@@ -263,6 +281,10 @@ public class Elevator extends SubsystemBase {
 
     public double wristVoltage() {
         return wristVoltage.getValue().in(Volts);
+    }
+
+    public double armEncoderPosition() {
+        return armEncoderPosition.getValue().in(Degrees);
     }
 
     public double elevatorRotationsToInches(double rotations) {
@@ -359,6 +381,34 @@ public class Elevator extends SubsystemBase {
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(l4ElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(l4ElevatorSetpoint))
+        );
+    }
+
+    public Command moveToAlgaeLow() {
+        return Commands.sequence(
+            run(() -> arm.setControl(
+                positionRequest.withPosition(Degrees.of(algaeLowArmSetpoint))
+            )).until(() -> armAtSetpoint(algaeLowArmSetpoint)),
+            run(() -> wrist.setControl(
+                positionRequest.withPosition(Degrees.of(algaeLowWristSetpoint))
+            )).until(() -> wristAtSetpoint(algaeLowWristSetpoint)),
+            run(() -> elevator.setControl(
+                positionRequest.withPosition(Rotations.of(algaeLowElevatorSetpoint))
+            )).until(() -> elevatorAtSetpoint(algaeLowElevatorSetpoint))
+        );
+    }
+
+    public Command moveToAlgaeHigh() {
+        return Commands.sequence(
+            run(() -> arm.setControl(
+                positionRequest.withPosition(Degrees.of(algaeHighArmSetpoint))
+            )).until(() -> armAtSetpoint(algaeHighArmSetpoint)),
+            run(() -> wrist.setControl(
+                positionRequest.withPosition(Degrees.of(algaeHighWristSetpoint))
+            )).until(() -> wristAtSetpoint(algaeHighWristSetpoint)),
+            run(() -> elevator.setControl(
+                positionRequest.withPosition(Rotations.of(algaeHighElevatorSetpoint))
+            )).until(() -> elevatorAtSetpoint(algaeHighElevatorSetpoint))
         );
     }
 

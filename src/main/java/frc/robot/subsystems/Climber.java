@@ -63,6 +63,7 @@ public class Climber extends SubsystemBase {
         ParentDevice.optimizeBusUtilizationForAll(
             climber, climberEncoder);
 
+
         SmartDashboard.putData("ClimberCoast", setCoast());
         SmartDashboard.putData("ClimberBrake", setBrake());
     }

@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Set;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -79,22 +81,27 @@ public class RobotContainer {
         //driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         //driver.start().and(driver.a()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
         // reset the field-centric heading on left bumper press
-        driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        driver.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         driver.povDown().whileTrue(intake.setPivotForward());
         driver.povUp().whileTrue(intake.setPivotBackward());
 
-        driver.b().whileTrue(intake.setIntakeForward());
-        driver.x().whileTrue(intake.setIntakeBackward());
+        driver.leftBumper().whileTrue(intake.intakeAlgae());
+
+        driver.a().whileTrue(intake.scoreAlgae());
 
         driver.rightTrigger().whileTrue(intake.setScorerForward());
         driver.leftTrigger().whileTrue(intake.setScorerBackward());
 
         operator.leftBumper().onTrue(elevator.moveToCoralStation());
+
         operator.a().onTrue(elevator.moveToL1());
         operator.b().onTrue(elevator.moveToL2());
         operator.x().onTrue(elevator.moveToL3());
         operator.y().onTrue(elevator.moveToL4());
+
+        operator.povDown().onTrue(elevator.moveToAlgaeLow());
+        operator.povUp().onTrue(elevator.moveToAlgaeHigh());
 
         operator.rightTrigger().whileTrue(climber.setClimberForward());
         operator.leftTrigger().whileTrue(climber.setClimberBackward());
