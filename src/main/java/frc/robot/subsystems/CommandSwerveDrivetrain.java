@@ -14,11 +14,14 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -36,6 +39,7 @@ import frc.robot.subsystems.Vision.PoseEstimate;
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.
  */
+@Logged
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private Notifier m_simNotifier = null;
@@ -48,14 +52,53 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
-    Vision vision = new Vision();
-    Field2d field = new Field2d();
+    private final Vision vision = new Vision();
+    private final Field2d field = new Field2d();
+
+    private int closestTag = 0;
+    private Pose2d closestLeftPole = new Pose2d();
+    private Pose2d closestRightPole = new Pose2d();
+
+    private final ProfiledPIDController xController = new ProfiledPIDController(
+        8.0, 0.0, 0.0, new Constraints(1.0, 3.0));
+    private final ProfiledPIDController yController = new ProfiledPIDController(
+        8.0, 0.0, 0.0, new Constraints(1.0, 3.0));
+
+    // Red REEF Positions
+    private final Pose2d sixLeft = new Pose2d(13.4, 2.865, new Rotation2d(Degrees.of(300)));
+    private final Pose2d sixRight = new Pose2d(13.825, 3.05, new Rotation2d(Degrees.of(300)));
+    private final Pose2d sevenLeft = new Pose2d(14.275, 3.65, new Rotation2d(Degrees.of(0)));
+    private final Pose2d sevenRight = new Pose2d(14.275, 4.175, new Rotation2d(Degrees.of(0)));
+    private final Pose2d eightLeft = new Pose2d(13.825, 5, new Rotation2d(Degrees.of(60)));
+    private final Pose2d eightRight = new Pose2d(13.500, 5.15, new Rotation2d(Degrees.of(60)));
+    private final Pose2d nineLeft = new Pose2d(12.575, 5.175, new Rotation2d(Degrees.of(120)));
+    private final Pose2d nineRight = new Pose2d(12.3, 5, new Rotation2d(Degrees.of(120)));
+    private final Pose2d tenLeft = new Pose2d(11.825, 4.175, new Rotation2d(Degrees.of(180)));
+    private final Pose2d tenRight = new Pose2d(11.825, 3.65, new Rotation2d(Degrees.of(180)));
+    private final Pose2d elevenLeft = new Pose2d(12.3, 3.05, new Rotation2d(Degrees.of(240)));
+    private final Pose2d elevenRight = new Pose2d(12.575, 2.875, new Rotation2d(Degrees.of(240)));
+
+    // Blue REEF Positions
+    private final Pose2d seventeenLeft = new Pose2d(3.7, 3.05, new Rotation2d(Degrees.of(240)));
+    private final Pose2d seventeenRight = new Pose2d(4.0, 2.865, new Rotation2d(Degrees.of(240)));
+    private final Pose2d eighteenLeft = new Pose2d(3.215, 4.19, new Rotation2d(Degrees.of(180)));
+    private final Pose2d eighteenRight = new Pose2d(3.215, 3.865, new Rotation2d(Degrees.of(180)));
+    private final Pose2d nineteenLeft = new Pose2d(4.0, 5.2, new Rotation2d(Degrees.of(120)));
+    private final Pose2d nineteenRight = new Pose2d(3.7, 5.02, new Rotation2d(Degrees.of(120)));
+    private final Pose2d twentyLeft = new Pose2d(5.25, 5.02, new Rotation2d(Degrees.of(60)));
+    private final Pose2d twentyRight = new Pose2d(5.0, 5.2, new Rotation2d(Degrees.of(60)));
+    private final Pose2d twentyOneLeft = new Pose2d(5.75, 3.865, new Rotation2d(Degrees.of(0)));
+    private final Pose2d twentyOneRight = new Pose2d(5.75, 4.19, new Rotation2d(Degrees.of(0)));
+    private final Pose2d twentyTwoLeft = new Pose2d(5.0, 2.865, new Rotation2d(Degrees.of(300)));
+    private final Pose2d twentyTwoRight = new Pose2d(5.25, 3.05, new Rotation2d(Degrees.of(300)));
 
     /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
+    private final SwerveRequest.FieldCentricFacingAngle m_driveToPoint = new SwerveRequest.FieldCentricFacingAngle()
+        .withHeadingPID(8.0, 0.0, 0.0);
 
     /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
     private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
@@ -148,6 +191,36 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return run(() -> this.setControl(requestSupplier.get()));
     }
 
+    public Command driveToReefPoint(boolean left) {
+        return applyRequest(() -> {
+            Pose2d newPose = getState().Pose;
+            if (left) {
+                return m_driveToPoint
+                    .withVelocityX(-xController.calculate(newPose.getX()))
+                    .withVelocityY(-yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestLeftPole.getRotation());
+            } else {
+                return m_driveToPoint
+                    .withVelocityX(-xController.calculate(newPose.getX()))
+                    .withVelocityY(-yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestRightPole.getRotation());
+            }
+        }).beforeStarting(runOnce(() -> {
+            Pose2d initialPose = getState().Pose;
+
+            xController.reset(initialPose.getX());
+            yController.reset(initialPose.getY());
+
+            if (left) {
+                xController.setGoal(closestLeftPole.getX());
+                yController.setGoal(closestLeftPole.getY());
+            } else {
+                xController.setGoal(closestRightPole.getX());
+                yController.setGoal(closestRightPole.getY());
+            }
+        }));
+    }
+
     /**
      * Runs the SysId Quasistatic test in the given direction for the translation routine
      *
@@ -228,7 +301,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             });
         }
 
-        field.setRobotPose(getState().Pose);
+        Pose2d currentPose = getState().Pose;
+        field.setRobotPose(currentPose);
         PoseEstimate visionPose = vision.getEstimatedPose();
         if (visionPose != null) {
             addVisionMeasurement(
@@ -239,6 +313,108 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
 
         SmartDashboard.putData(field);
+
+        if (currentPose.getX() > 8.75) {
+            if (currentPose.getX() > 13.05) {
+                double distanceToSix = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(6).toPose2d().getTranslation()
+                );
+                double distanceToSeven = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(7).toPose2d().getTranslation()
+                );
+                double distanceToEight = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(8).toPose2d().getTranslation()
+                );
+
+                if (distanceToSix < distanceToSeven && distanceToSix < distanceToEight) {
+                    closestTag = 6;
+                    closestLeftPole = sixLeft;
+                    closestRightPole = sixRight;
+                } else if (distanceToSeven < distanceToEight) {
+                    closestTag = 7;
+                    closestLeftPole = sevenLeft;
+                    closestRightPole = sevenRight;
+                } else {
+                    closestTag = 8;
+                    closestLeftPole = eightLeft;
+                    closestRightPole = eightRight;
+                }
+            } else {
+                double distanceToNine = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(9).toPose2d().getTranslation()
+                );
+                double distanceToTen = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(10).toPose2d().getTranslation()
+                );
+                double distanceToEleven = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(11).toPose2d().getTranslation()
+                );
+
+                if (distanceToNine < distanceToTen && distanceToNine < distanceToEleven) {
+                    closestTag = 9;
+                    closestLeftPole = nineLeft;
+                    closestRightPole = nineRight;
+                } else if (distanceToTen < distanceToEleven) {
+                    closestTag = 10;
+                    closestLeftPole = tenLeft;
+                    closestRightPole = tenRight;
+                } else {
+                    closestTag = 11;
+                    closestLeftPole = elevenLeft;
+                    closestRightPole = elevenRight;
+                }
+            }
+        } else {
+            if (currentPose.getX() < 4.49) {
+                double distanceToSeventeen = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(17).toPose2d().getTranslation()
+                );
+                double distanceToEighteen = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(18).toPose2d().getTranslation()
+                );
+                double distanceToNineteen = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(19).toPose2d().getTranslation()
+                );
+
+                if (distanceToSeventeen < distanceToEighteen && distanceToSeventeen < distanceToNineteen) {
+                    closestTag = 17;
+                    closestLeftPole = seventeenLeft;
+                    closestRightPole = seventeenRight;
+                } else if (distanceToEighteen < distanceToNineteen) {
+                    closestTag = 18;
+                    closestLeftPole = eighteenLeft;
+                    closestRightPole = eighteenRight;
+                } else {
+                    closestTag = 19;
+                    closestLeftPole = nineteenLeft;
+                    closestRightPole = nineteenRight;
+                }
+            } else {
+                double distanceToTwenty = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(20).toPose2d().getTranslation()
+                );
+                double distanceToTwentyOne = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(21).toPose2d().getTranslation()
+                );
+                double distanceToTwentyTwo = currentPose.getTranslation().getDistance(
+                    vision.getTagPose(22).toPose2d().getTranslation()
+                );
+
+                if (distanceToTwenty < distanceToTwentyOne && distanceToTwenty < distanceToTwentyTwo) {
+                    closestTag = 20;
+                    closestLeftPole = twentyLeft;
+                    closestRightPole = twentyRight;
+                } else if (distanceToTwentyOne < distanceToTwentyTwo) {
+                    closestTag = 21;
+                    closestLeftPole = twentyOneLeft;
+                    closestRightPole = twentyOneRight;
+                } else {
+                    closestTag = 22;
+                    closestLeftPole = twentyTwoLeft;
+                    closestRightPole = twentyTwoRight;
+                }
+            }
+        }
     }
 
     private void startSimThread() {

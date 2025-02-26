@@ -46,8 +46,8 @@ public class Elevator extends SubsystemBase {
         .withNeutralMode(NeutralModeValue.Brake)
         .withInverted(InvertedValue.Clockwise_Positive);
     private final VoltageConfigs voltageConfigs = new VoltageConfigs()
-        .withPeakForwardVoltage(Volts.of(6.0))
-        .withPeakReverseVoltage(Volts.of(-6.0));
+        .withPeakForwardVoltage(Volts.of(5.0))
+        .withPeakReverseVoltage(Volts.of(-5.0));
     private final VoltageConfigs slowVoltageConfigs = new VoltageConfigs()
         .withPeakForwardVoltage(Volts.of(3.0))
         .withPeakReverseVoltage(Volts.of(-3.0));
@@ -79,7 +79,7 @@ public class Elevator extends SubsystemBase {
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(8);
     private final MagnetSensorConfigs armEncoderConfigs = new MagnetSensorConfigs()
-        .withMagnetOffset(Degrees.of(-116.0))
+        .withMagnetOffset(Degrees.of(154.07))
         .withAbsoluteSensorDiscontinuityPoint(Degrees.of(200.0));
     private final MagnetSensorConfigs wristEncoderConfigs = new MagnetSensorConfigs()
         .withMagnetOffset(Degrees.of(38.0));
@@ -152,7 +152,7 @@ public class Elevator extends SubsystemBase {
     private final double coralElevatorInitialSetpoint = 4.0;
     private final double coralWristSetpoint = -84.0;
     private final double coralArmSetpoint = 115.5;
-    private final double coralElevatorSetpoint = 10.5;
+    private final double coralElevatorSetpoint = 9.9;
 
     private final double l1ArmSetpoint = 70.2;
     private final double l1WristSetpoint = -53.1;

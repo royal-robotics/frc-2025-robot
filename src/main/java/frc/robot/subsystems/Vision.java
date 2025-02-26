@@ -44,11 +44,11 @@ public class Vision {
         new Translation3d(
             Units.inchesToMeters(10.125),
             Units.inchesToMeters(-11.0),
-            Units.inchesToMeters(33.22)
+            Units.inchesToMeters(33.3)
         ),
         new Rotation3d(
             Units.degreesToRadians(0.0),
-            Units.degreesToRadians(-10.0),
+            Units.degreesToRadians(-25.0),
             Units.degreesToRadians(0.0)
         ));
 
@@ -143,6 +143,10 @@ public class Vision {
                 return VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
             }
         }
+    }
+
+    public Pose3d getTagPose(int id) {
+        return fieldLayout.getTagPose(id).get();
     }
 
     public class PoseEstimate {

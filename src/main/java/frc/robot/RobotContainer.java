@@ -13,7 +13,11 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -83,8 +87,8 @@ public class RobotContainer {
         // reset the field-centric heading on left bumper press
         driver.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
-        driver.povDown().whileTrue(intake.setPivotForward());
-        driver.povUp().whileTrue(intake.setPivotBackward());
+        driver.povLeft().whileTrue(drivetrain.driveToReefPoint(true));
+        driver.povRight().whileTrue(drivetrain.driveToReefPoint(false));
 
         driver.leftBumper().whileTrue(intake.intakeAlgae());
 
