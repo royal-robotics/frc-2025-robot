@@ -152,22 +152,22 @@ public class Elevator extends SubsystemBase {
     private final double coralElevatorInitialSetpoint = 4.0;
     private final double coralWristSetpoint = -84.0;
     private final double coralArmSetpoint = 115.5;
-    private final double coralElevatorSetpoint = 9.9;
+    private final double coralElevatorSetpoint = 10.0;
 
-    private final double l1ArmSetpoint = 70.2;
-    private final double l1WristSetpoint = -53.1;
-    private final double l1ElevatorSetpoint = 4.68;
+    private final double l1ArmSetpoint = 69.2;
+    private final double l1WristSetpoint = 130.0;
+    private final double l1ElevatorSetpoint = 0.5;
 
-    private final double l2ArmSetpoint = 70.2;
+    private final double l2ArmSetpoint = 69.2;
     private final double l2WristSetpoint = 59.7;
     private final double l2ElevatorSetpoint = 6.55;
 
-    private final double l3ArmSetpoint = 70.2;
+    private final double l3ArmSetpoint = 69.2;
     private final double l3WristSetpoint = 60.0;
     private final double l3ElevatorSetpoint = 16.93;
 
-    private final double l4ArmSetpoint = 70.2;
-    private final double l4WristSetpoint = 45.8;
+    private final double l4ArmSetpoint = 69.2;
+    private final double l4WristSetpoint = 40.8;
     private final double l4ElevatorSetpoint = 31.88;
 
     private final double algaeLowArmSetpoint = 33.3;
@@ -176,7 +176,7 @@ public class Elevator extends SubsystemBase {
 
     private final double algaeHighArmSetpoint = 33.3;
     private final double algaeHighWristSetpoint = -77.6;
-    private final double algaeHighElevatorSetpoint = 25.45;
+    private final double algaeHighElevatorSetpoint = 25.15;
 
     private final double elevatorRotationsToInches = 0.649;
 
@@ -330,15 +330,15 @@ public class Elevator extends SubsystemBase {
 
     public Command moveToL1() {
         return Commands.sequence(
+            run(() -> elevator.setControl(
+                positionRequest.withPosition(Rotations.of(l1ElevatorSetpoint))
+            )).until(() -> elevatorAtSetpoint(l1ElevatorSetpoint)),
             run(() -> arm.setControl(
                 positionRequest.withPosition(Degrees.of(l1ArmSetpoint))
             )).until(() -> armAtSetpoint(l1ArmSetpoint)),
             run(() -> wrist.setControl(
                 positionRequest.withPosition(Degrees.of(l1WristSetpoint))
-            )).until(() -> wristAtSetpoint(l1WristSetpoint)),
-            run(() -> elevator.setControl(
-                positionRequest.withPosition(Rotations.of(l1ElevatorSetpoint))
-            )).until(() -> elevatorAtSetpoint(l1ElevatorSetpoint))
+            )).until(() -> wristAtSetpoint(l1WristSetpoint))
         );
     }
 

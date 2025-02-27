@@ -55,9 +55,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final Vision vision = new Vision();
     private final Field2d field = new Field2d();
 
-    private int closestTag = 0;
+    private int closestReefTag = 0;
     private Pose2d closestLeftPole = new Pose2d();
     private Pose2d closestRightPole = new Pose2d();
+
+    private int closestCoralStationTag = 0;
+    private Pose2d closestFarStation = new Pose2d();
+    private Pose2d closestNearStation = new Pose2d();
 
     private final ProfiledPIDController xController = new ProfiledPIDController(
         8.0, 0.0, 0.0, new Constraints(1.0, 3.0));
@@ -65,32 +69,44 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         8.0, 0.0, 0.0, new Constraints(1.0, 3.0));
 
     // Red REEF Positions
-    private final Pose2d sixLeft = new Pose2d(13.4, 2.865, new Rotation2d(Degrees.of(300)));
-    private final Pose2d sixRight = new Pose2d(13.825, 3.05, new Rotation2d(Degrees.of(300)));
-    private final Pose2d sevenLeft = new Pose2d(14.275, 3.65, new Rotation2d(Degrees.of(0)));
+    private final Pose2d sixLeft = new Pose2d(13.5, 2.865, new Rotation2d(Degrees.of(300)));
+    private final Pose2d sixRight = new Pose2d(13.83, 3.05, new Rotation2d(Degrees.of(300)));
+    private final Pose2d sevenLeft = new Pose2d(14.275, 3.75, new Rotation2d(Degrees.of(0)));
     private final Pose2d sevenRight = new Pose2d(14.275, 4.175, new Rotation2d(Degrees.of(0)));
-    private final Pose2d eightLeft = new Pose2d(13.825, 5, new Rotation2d(Degrees.of(60)));
-    private final Pose2d eightRight = new Pose2d(13.500, 5.15, new Rotation2d(Degrees.of(60)));
-    private final Pose2d nineLeft = new Pose2d(12.575, 5.175, new Rotation2d(Degrees.of(120)));
+    private final Pose2d eightLeft = new Pose2d(13.85, 5, new Rotation2d(Degrees.of(60)));
+    private final Pose2d eightRight = new Pose2d(13.55, 5.17, new Rotation2d(Degrees.of(60)));
+    private final Pose2d nineLeft = new Pose2d(12.57, 5.20, new Rotation2d(Degrees.of(120)));
     private final Pose2d nineRight = new Pose2d(12.3, 5, new Rotation2d(Degrees.of(120)));
-    private final Pose2d tenLeft = new Pose2d(11.825, 4.175, new Rotation2d(Degrees.of(180)));
-    private final Pose2d tenRight = new Pose2d(11.825, 3.65, new Rotation2d(Degrees.of(180)));
-    private final Pose2d elevenLeft = new Pose2d(12.3, 3.05, new Rotation2d(Degrees.of(240)));
-    private final Pose2d elevenRight = new Pose2d(12.575, 2.875, new Rotation2d(Degrees.of(240)));
+    private final Pose2d tenLeft = new Pose2d(11.825, 4.19, new Rotation2d(Degrees.of(180)));
+    private final Pose2d tenRight = new Pose2d(11.82, 3.87, new Rotation2d(Degrees.of(180)));
+    private final Pose2d elevenLeft = new Pose2d(12.2, 3.07, new Rotation2d(Degrees.of(240)));
+    private final Pose2d elevenRight = new Pose2d(12.50, 2.88, new Rotation2d(Degrees.of(240)));
 
     // Blue REEF Positions
-    private final Pose2d seventeenLeft = new Pose2d(3.7, 3.05, new Rotation2d(Degrees.of(240)));
-    private final Pose2d seventeenRight = new Pose2d(4.0, 2.865, new Rotation2d(Degrees.of(240)));
-    private final Pose2d eighteenLeft = new Pose2d(3.215, 4.19, new Rotation2d(Degrees.of(180)));
-    private final Pose2d eighteenRight = new Pose2d(3.215, 3.865, new Rotation2d(Degrees.of(180)));
-    private final Pose2d nineteenLeft = new Pose2d(4.0, 5.2, new Rotation2d(Degrees.of(120)));
-    private final Pose2d nineteenRight = new Pose2d(3.7, 5.02, new Rotation2d(Degrees.of(120)));
-    private final Pose2d twentyLeft = new Pose2d(5.25, 5.02, new Rotation2d(Degrees.of(60)));
-    private final Pose2d twentyRight = new Pose2d(5.0, 5.2, new Rotation2d(Degrees.of(60)));
-    private final Pose2d twentyOneLeft = new Pose2d(5.75, 3.865, new Rotation2d(Degrees.of(0)));
-    private final Pose2d twentyOneRight = new Pose2d(5.75, 4.19, new Rotation2d(Degrees.of(0)));
-    private final Pose2d twentyTwoLeft = new Pose2d(5.0, 2.865, new Rotation2d(Degrees.of(300)));
-    private final Pose2d twentyTwoRight = new Pose2d(5.25, 3.05, new Rotation2d(Degrees.of(300)));
+    private final Pose2d seventeenLeft = new Pose2d(3.7, 3.05, new Rotation2d(Degrees.of(60)));
+    private final Pose2d seventeenRight = new Pose2d(4.0, 2.865, new Rotation2d(Degrees.of(60)));
+    private final Pose2d eighteenLeft = new Pose2d(3.215, 4.19, new Rotation2d(Degrees.of(0)));
+    private final Pose2d eighteenRight = new Pose2d(3.215, 3.865, new Rotation2d(Degrees.of(0)));
+    private final Pose2d nineteenLeft = new Pose2d(4.0, 5.2, new Rotation2d(Degrees.of(300)));
+    private final Pose2d nineteenRight = new Pose2d(3.7, 5.02, new Rotation2d(Degrees.of(300)));
+    private final Pose2d twentyLeft = new Pose2d(5.25, 5.02, new Rotation2d(Degrees.of(240)));
+    private final Pose2d twentyRight = new Pose2d(5.0, 5.2, new Rotation2d(Degrees.of(240)));
+    private final Pose2d twentyOneLeft = new Pose2d(5.75, 3.865, new Rotation2d(Degrees.of(180)));
+    private final Pose2d twentyOneRight = new Pose2d(5.75, 4.19, new Rotation2d(Degrees.of(180)));
+    private final Pose2d twentyTwoLeft = new Pose2d(5.0, 2.865, new Rotation2d(Degrees.of(120)));
+    private final Pose2d twentyTwoRight = new Pose2d(5.25, 3.05, new Rotation2d(Degrees.of(120)));
+
+    // Red CORAL STATION Positions
+    private final Pose2d oneFar = new Pose2d(15.92, 0.65, new Rotation2d(Degrees.of(125)));
+    private final Pose2d oneNear = new Pose2d(16.95, 1.39, new Rotation2d(Degrees.of(125)));
+    private final Pose2d twoFar = new Pose2d(15.95, 7.47, new Rotation2d(Degrees.of(235)));
+    private final Pose2d twoNear = new Pose2d(16.89, 6.70, new Rotation2d(Degrees.of(235)));
+
+    // Blue CORAL STATION Positions
+    private final Pose2d twelveFar = new Pose2d(1.64, 0.65, new Rotation2d(Degrees.of(235)));
+    private final Pose2d twelveNear = new Pose2d(0.65, 1.42, new Rotation2d(Degrees.of(235)));
+    private final Pose2d thirteenFar = new Pose2d(1.65, 7.47, new Rotation2d(Degrees.of(125)));
+    private final Pose2d thirteenNear = new Pose2d(0.64, 6.70, new Rotation2d(Degrees.of(125)));
 
     /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
@@ -195,15 +211,29 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return applyRequest(() -> {
             Pose2d newPose = getState().Pose;
             if (left) {
-                return m_driveToPoint
+                if (newPose.getX() > 8.75) {
+                    return m_driveToPoint
                     .withVelocityX(-xController.calculate(newPose.getX()))
                     .withVelocityY(-yController.calculate(newPose.getY()))
                     .withTargetDirection(closestLeftPole.getRotation());
+                } else {
+                    return m_driveToPoint
+                    .withVelocityX(xController.calculate(newPose.getX()))
+                    .withVelocityY(yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestLeftPole.getRotation());
+                }
             } else {
-                return m_driveToPoint
+                if (newPose.getX() > 8.75) {
+                    return m_driveToPoint
                     .withVelocityX(-xController.calculate(newPose.getX()))
                     .withVelocityY(-yController.calculate(newPose.getY()))
                     .withTargetDirection(closestRightPole.getRotation());
+                } else {
+                    return m_driveToPoint
+                    .withVelocityX(xController.calculate(newPose.getX()))
+                    .withVelocityY(yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestRightPole.getRotation());
+                }
             }
         }).beforeStarting(runOnce(() -> {
             Pose2d initialPose = getState().Pose;
@@ -217,6 +247,50 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             } else {
                 xController.setGoal(closestRightPole.getX());
                 yController.setGoal(closestRightPole.getY());
+            }
+        }));
+    }
+
+    public Command driveToCoralStationPoint(boolean far) {
+        return applyRequest(() -> {
+            Pose2d newPose = getState().Pose;
+            if (far) {
+                if (newPose.getX() > 8.75) {
+                    return m_driveToPoint
+                    .withVelocityX(-xController.calculate(newPose.getX()))
+                    .withVelocityY(-yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestFarStation.getRotation());
+                } else {
+                    return m_driveToPoint
+                    .withVelocityX(xController.calculate(newPose.getX()))
+                    .withVelocityY(yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestFarStation.getRotation());
+                }
+            } else {
+                if (newPose.getX() > 8.75) {
+                    return m_driveToPoint
+                    .withVelocityX(-xController.calculate(newPose.getX()))
+                    .withVelocityY(-yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestNearStation.getRotation());
+                } else {
+                    return m_driveToPoint
+                    .withVelocityX(xController.calculate(newPose.getX()))
+                    .withVelocityY(yController.calculate(newPose.getY()))
+                    .withTargetDirection(closestNearStation.getRotation());
+                }
+            }
+        }).beforeStarting(runOnce(() -> {
+            Pose2d initialPose = getState().Pose;
+
+            xController.reset(initialPose.getX());
+            yController.reset(initialPose.getY());
+
+            if (far) {
+                xController.setGoal(closestFarStation.getX());
+                yController.setGoal(closestFarStation.getY());
+            } else {
+                xController.setGoal(closestNearStation.getX());
+                yController.setGoal(closestNearStation.getY());
             }
         }));
     }
@@ -327,15 +401,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 );
 
                 if (distanceToSix < distanceToSeven && distanceToSix < distanceToEight) {
-                    closestTag = 6;
+                    closestReefTag = 6;
                     closestLeftPole = sixLeft;
                     closestRightPole = sixRight;
                 } else if (distanceToSeven < distanceToEight) {
-                    closestTag = 7;
+                    closestReefTag = 7;
                     closestLeftPole = sevenLeft;
                     closestRightPole = sevenRight;
                 } else {
-                    closestTag = 8;
+                    closestReefTag = 8;
                     closestLeftPole = eightLeft;
                     closestRightPole = eightRight;
                 }
@@ -351,18 +425,28 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 );
 
                 if (distanceToNine < distanceToTen && distanceToNine < distanceToEleven) {
-                    closestTag = 9;
+                    closestReefTag = 9;
                     closestLeftPole = nineLeft;
                     closestRightPole = nineRight;
                 } else if (distanceToTen < distanceToEleven) {
-                    closestTag = 10;
+                    closestReefTag = 10;
                     closestLeftPole = tenLeft;
                     closestRightPole = tenRight;
                 } else {
-                    closestTag = 11;
+                    closestReefTag = 11;
                     closestLeftPole = elevenLeft;
                     closestRightPole = elevenRight;
                 }
+            }
+
+            if (currentPose.getY() < 4.0) {
+                closestCoralStationTag = 1;
+                closestFarStation = oneFar;
+                closestNearStation = oneNear;
+            } else {
+                closestCoralStationTag = 2;
+                closestFarStation = twoFar;
+                closestNearStation = twoNear;
             }
         } else {
             if (currentPose.getX() < 4.49) {
@@ -377,15 +461,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 );
 
                 if (distanceToSeventeen < distanceToEighteen && distanceToSeventeen < distanceToNineteen) {
-                    closestTag = 17;
+                    closestReefTag = 17;
                     closestLeftPole = seventeenLeft;
                     closestRightPole = seventeenRight;
                 } else if (distanceToEighteen < distanceToNineteen) {
-                    closestTag = 18;
+                    closestReefTag = 18;
                     closestLeftPole = eighteenLeft;
                     closestRightPole = eighteenRight;
                 } else {
-                    closestTag = 19;
+                    closestReefTag = 19;
                     closestLeftPole = nineteenLeft;
                     closestRightPole = nineteenRight;
                 }
@@ -401,18 +485,28 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 );
 
                 if (distanceToTwenty < distanceToTwentyOne && distanceToTwenty < distanceToTwentyTwo) {
-                    closestTag = 20;
+                    closestReefTag = 20;
                     closestLeftPole = twentyLeft;
                     closestRightPole = twentyRight;
                 } else if (distanceToTwentyOne < distanceToTwentyTwo) {
-                    closestTag = 21;
+                    closestReefTag = 21;
                     closestLeftPole = twentyOneLeft;
                     closestRightPole = twentyOneRight;
                 } else {
-                    closestTag = 22;
+                    closestReefTag = 22;
                     closestLeftPole = twentyTwoLeft;
                     closestRightPole = twentyTwoRight;
                 }
+            }
+
+            if (currentPose.getY() < 4.0) {
+                closestCoralStationTag = 12;
+                closestFarStation = twelveFar;
+                closestNearStation = twelveNear;
+            } else {
+                closestCoralStationTag = 13;
+                closestFarStation = thirteenFar;
+                closestNearStation = thirteenNear;
             }
         }
     }

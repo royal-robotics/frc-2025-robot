@@ -219,10 +219,22 @@ public class Intake extends SubsystemBase {
         );
     }
 
+    public Command setScorerPosition() {
+        return runOnce(
+            () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
+        );
+    }
+
     public Command setScorerForward() {
         return startEnd(
-            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(1.0))),
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(3.0))),
             () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
+        );
+    }
+
+    public Command scorerForward() {
+        return runOnce(
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(3.0)))
         );
     }
 
@@ -230,6 +242,20 @@ public class Intake extends SubsystemBase {
         return startEnd(
             () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-3.0))),
             () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
+        );
+    }
+
+    public Command setScorerBackwardSlow() {
+        return startEnd(
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-1.5))),
+            () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
+        );
+    }
+
+    public Command setScorerBackwardVoltage() {
+        return startEnd(
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-3.0))),
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(0.0)))
         );
     }
 

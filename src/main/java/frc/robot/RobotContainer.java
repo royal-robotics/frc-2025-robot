@@ -12,6 +12,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -21,6 +22,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 import frc.robot.generated.TunerConstants;
@@ -53,9 +55,11 @@ public class RobotContainer {
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
+        configureBindings();
+        configureNamedCommands();
+
         autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Mode", autoChooser);
-        configureBindings();
     }
 
     private void configureBindings() {
@@ -64,9 +68,9 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-driver.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-driver.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-driver.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(-driver.getLeftY() * MaxSpeed * 0.8) // Drive forward with negative Y (forward)
+                    .withVelocityY(-driver.getLeftX() * MaxSpeed * 0.8) // Drive left with negative X (left)
+                    .withRotationalRate(-driver.getRightX() * MaxAngularRate * 0.8) // Drive counterclockwise with negative X (left)
                     .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             )
         );
@@ -87,25 +91,43 @@ public class RobotContainer {
         // reset the field-centric heading on left bumper press
         driver.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
-        driver.povLeft().whileTrue(drivetrain.driveToReefPoint(true));
-        driver.povRight().whileTrue(drivetrain.driveToReefPoint(false));
+        //driver.povLeft().whileTrue(drivetrain.driveToReefPoint(true));
+        //driver.povRight().whileTrue(drivetrain.driveToReefPoint(false));
+        driver.leftTrigger().whileTrue(drivetrain.driveToReefPoint(true));
+        driver.rightTrigger().whileTrue(drivetrain.driveToReefPoint(false));
+        //driver.povUp().whileTrue(drivetrain.driveToCoralStationPoint(true));
+        //driver.povDown().whileTrue(drivetrain.driveToCoralStationPoint(false));
+        driver.b().whileTrue(drivetrain.driveToCoralStationPoint(true));
+        driver.a().whileTrue(drivetrain.driveToCoralStationPoint(false));
 
-        driver.leftBumper().whileTrue(intake.intakeAlgae());
+        //driver.leftBumper().whileTrue(intake.intakeAlgae());
+        driver.leftBumper().whileTrue(Commands.either(
+            intake.setScorerBackward(),
+            intake.setScorerBackwardSlow(),
+            () -> elevator.elevatorPosition() > 2.0));
 
-        driver.a().whileTrue(intake.scoreAlgae());
+        //driver.a().whileTrue(intake.scoreAlgae());
 
-        driver.rightTrigger().whileTrue(intake.setScorerForward());
-        driver.leftTrigger().whileTrue(intake.setScorerBackward());
+        //driver.rightTrigger().whileTrue(intake.setScorerForward());
+        //driver.leftTrigger().whileTrue(intake.setScorerBackward());
+
+        driver.x().whileTrue(intake.scoreAlgae());
+        driver.y().whileTrue(intake.setScorerForward());
 
         operator.leftBumper().onTrue(elevator.moveToCoralStation());
+        operator.rightBumper().whileTrue(intake.intakeAlgae());
 
         operator.a().onTrue(elevator.moveToL1());
         operator.b().onTrue(elevator.moveToL2());
         operator.x().onTrue(elevator.moveToL3());
         operator.y().onTrue(elevator.moveToL4());
 
-        operator.povDown().onTrue(elevator.moveToAlgaeLow());
-        operator.povUp().onTrue(elevator.moveToAlgaeHigh());
+        operator.povDown().onTrue(Commands.sequence(
+            elevator.moveToAlgaeLow(),
+            intake.scorerForward()));
+        operator.povUp().onTrue(Commands.sequence(
+            elevator.moveToAlgaeHigh(),
+            intake.scorerForward()));
 
         operator.rightTrigger().whileTrue(climber.setClimberForward());
         operator.leftTrigger().whileTrue(climber.setClimberBackward());
@@ -113,8 +135,27 @@ public class RobotContainer {
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
+    public void configureNamedCommands() {
+        NamedCommands.registerCommand("ElevatorToCoralStation", Commands.sequence(
+            Commands.waitSeconds(0.5),
+            elevator.moveToCoralStation()));
+        NamedCommands.registerCommand("ElevatorToL4", elevator.moveToL4());
+        NamedCommands.registerCommand("ScoreCoral", Commands.sequence(
+            Commands.waitSeconds(0.5),
+            intake.setScorerBackward().withTimeout(0.5)
+        ));
+        NamedCommands.registerCommand("IntakeCoral", Commands.sequence(
+            intake.setScorerBackwardVoltage().until(() -> intake.hasCoral()),
+            intake.setScorerBackward().withTimeout(0.1)
+        ));
+    }
+
     public Command getAutonomousCommand() {
         /* Run the path selected from the auto chooser */
         return autoChooser.getSelected();
+    }
+
+    public Command resetScorer() {
+        return intake.setScorerPosition();
     }
 }
