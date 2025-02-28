@@ -129,6 +129,9 @@ public class RobotContainer {
             elevator.moveToAlgaeHigh(),
             intake.scorerForward()));
 
+        operator.start().onTrue(elevator.moveElevatorUp());
+        operator.back().onTrue(elevator.moveElevatorDown());
+
         operator.rightTrigger().whileTrue(climber.setClimberForward());
         operator.leftTrigger().whileTrue(climber.setClimberBackward());
 

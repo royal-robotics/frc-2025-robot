@@ -311,6 +311,18 @@ public class Elevator extends SubsystemBase {
         return Math.abs(wristPosition() - setpoint) < 5.0;
     }
 
+    public Command moveElevatorUp() {
+        return runOnce(() -> elevator.setControl(
+            positionRequest.withPosition(elevatorPosition.getValue().plus(Rotations.of(0.2)))
+        ));
+    }
+
+    public Command moveElevatorDown() {
+        return runOnce(() -> elevator.setControl(
+            positionRequest.withPosition(elevatorPosition.getValue().minus(Rotations.of(0.2)))
+        ));
+    }
+
     public Command moveToCoralStation() {
         return Commands.sequence(
             run(() -> elevator.setControl(
