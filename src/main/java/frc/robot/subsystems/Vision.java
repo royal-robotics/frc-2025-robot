@@ -31,24 +31,24 @@ public class Vision {
 
     private final Transform3d downRobotToCamera = new Transform3d(
         new Translation3d(
-            Units.inchesToMeters(10.125),
+            Units.inchesToMeters(10.305),
             Units.inchesToMeters(11.0),
-            Units.inchesToMeters(24.87)
+            Units.inchesToMeters(26.6315)
         ),
         new Rotation3d(
             Units.degreesToRadians(0.0),
-            Units.degreesToRadians(10.0),
+            Units.degreesToRadians(25.0),
             Units.degreesToRadians(0.0)
         ));
     private final Transform3d upRobotToCamera = new Transform3d(
         new Translation3d(
-            Units.inchesToMeters(10.125),
+            Units.inchesToMeters(10.305),
             Units.inchesToMeters(-11.0),
-            Units.inchesToMeters(33.3)
+            Units.inchesToMeters(26.6315)
         ),
         new Rotation3d(
             Units.degreesToRadians(0.0),
-            Units.degreesToRadians(-25.0),
+            Units.degreesToRadians(25.0),
             Units.degreesToRadians(0.0)
         ));
 
@@ -86,11 +86,13 @@ public class Vision {
     private PoseEstimate getEstimatedRobotPoseForCamera(PhotonCamera camera, PhotonPoseEstimator poseEstimator) {
         PoseEstimate currentPoseEstimate = null;
         for (PhotonPipelineResult result : camera.getAllUnreadResults()) {
-            Optional<EstimatedRobotPose> estimatedPose = poseEstimator.update(result);
-            if (estimatedPose.isPresent()) {
-                EstimatedRobotPose possiblePose = estimatedPose.get();
-                if (poseIsValid(possiblePose, result.getTargets())) {
-                    currentPoseEstimate = new PoseEstimate(possiblePose, calculateStdDev(possiblePose, result.getTargets()));
+            if (readingIsValid(result.getTargets())) {
+                Optional<EstimatedRobotPose> estimatedPose = poseEstimator.update(result);
+                if (estimatedPose.isPresent()) {
+                    EstimatedRobotPose possiblePose = estimatedPose.get();
+                    if (poseIsValid(possiblePose)) {
+                        currentPoseEstimate = new PoseEstimate(possiblePose, calculateStdDev(possiblePose, result.getTargets()));
+                    }
                 }
             }
         }
@@ -98,15 +100,21 @@ public class Vision {
         return currentPoseEstimate;
     }
 
-    private boolean poseIsValid(EstimatedRobotPose pose, List<PhotonTrackedTarget> targets) {
+    private boolean readingIsValid(List<PhotonTrackedTarget> targets) {
         if (targets.isEmpty()) {
             return false;
         }
 
-        if (targets.size() == 1 && targets.get(0).getPoseAmbiguity() > 0.3) {
-            return false;
+        for (PhotonTrackedTarget target : targets) {
+            if (target.getPoseAmbiguity() > 0.2) {
+                return false;
+            }
         }
 
+        return true;
+    }
+
+    private boolean poseIsValid(EstimatedRobotPose pose) {
         return pose.estimatedPose.getZ() < 0.75 &&
             pose.estimatedPose.getX() > 0.0 &&
             pose.estimatedPose.getX() < fieldLayout.getFieldLength() &&
@@ -126,7 +134,7 @@ public class Vision {
             }
         } else {
             double averageDistance = 0.0;
-            int numTags = 0;
+            double numTags = 0.0;
             for (PhotonTrackedTarget target : targets) {
                 Optional<Pose3d> tagPose = fieldLayout.getTagPose(target.getFiducialId());
                 if (tagPose.isPresent()) {
@@ -165,5 +173,7 @@ public class Vision {
         public Matrix<N3, N1> getEstimatedStdDev() {
             return estimatedStdDev;
         }
+
+
     }
 }

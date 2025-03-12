@@ -19,45 +19,64 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.LED;
 
 @Logged
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(2).in(RadiansPerSecond); // 2 rotations per second max angular velocity
-    private double SlowSpeed = MaxSpeed * 0.25;
-    private double SlowAngularRate = MaxAngularRate * 0.25;
+    private double NormalSpeed = MaxSpeed * 0.8; // Normal drive speed is 80% of max speed
+    private double NormalAngularRate = MaxAngularRate * 0.8; // Normal rotation rate is 80% of max rotation rate
+    private double SlowSpeed = MaxSpeed * 0.25; // Slow drive speed is 25% of max speed
+    private double SlowAngularRate = MaxAngularRate * 0.25; // Slow rotation rate is 25% of max rotation rate
 
-    /* Setting up bindings for necessary control of the swerve drive platform */
+    // Drive settings
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
+    // Controllers
     private final CommandXboxController driver = new CommandXboxController(0);
     private final CommandXboxController operator = new CommandXboxController(1);
 
+    // Subsystems
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final Elevator elevator = new Elevator();
     public final Intake intake = new Intake();
     public final Climber climber = new Climber();
+    public final LED led = new LED();
+    
 
+    public final Trigger coralSensor;
+
+    // Autonomous selector
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
+        coralSensor = new Trigger(() -> intake.hasCoral());
+        
+
         configureBindings();
         configureNamedCommands();
 
+    
+        // Place Autonomous selector on SmartDashboard
         autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Mode", autoChooser);
     }
@@ -68,12 +87,14 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-driver.getLeftY() * MaxSpeed * 0.8) // Drive forward with negative Y (forward)
-                    .withVelocityY(-driver.getLeftX() * MaxSpeed * 0.8) // Drive left with negative X (left)
-                    .withRotationalRate(-driver.getRightX() * MaxAngularRate * 0.8) // Drive counterclockwise with negative X (left)
-                    .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+                drive.withVelocityX(-driver.getLeftY() * NormalSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-driver.getLeftX() * NormalSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-driver.getRightX() * NormalAngularRate) // Drive counterclockwise with negative X (left)
+                    .withDeadband(NormalSpeed * 0.1).withRotationalDeadband(NormalAngularRate * 0.1) // Add a 10% deadband
             )
         );
+
+        // Drive slowly when driver right bumper is held
         driver.rightBumper().whileTrue(
             drivetrain.applyRequest(() -> 
                 drive.withVelocityX(-driver.getLeftY() * SlowSpeed) // Drive forward with negative Y (forward)
@@ -82,58 +103,80 @@ public class RobotContainer {
                     .withDeadband(SlowSpeed * 0.1).withRotationalDeadband(SlowAngularRate * 0.1) // Add a 10% deadband
             )
         );
+
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
         //driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
         //driver.back().and(driver.a()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
         //driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         //driver.start().and(driver.a()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-        // reset the field-centric heading on left bumper press
+
+        // Reset the field-centric heading on driver start press
         driver.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
-        //driver.povLeft().whileTrue(drivetrain.driveToReefPoint(true));
-        //driver.povRight().whileTrue(drivetrain.driveToReefPoint(false));
+        // Drive to left/right reef points on driver left/right trigger press
         driver.leftTrigger().whileTrue(drivetrain.driveToReefPoint(true));
         driver.rightTrigger().whileTrue(drivetrain.driveToReefPoint(false));
-        //driver.povUp().whileTrue(drivetrain.driveToCoralStationPoint(true));
-        //driver.povDown().whileTrue(drivetrain.driveToCoralStationPoint(false));
+
+        // Drive to far/near coral station points on driver b/a press
         driver.b().whileTrue(drivetrain.driveToCoralStationPoint(true));
         driver.a().whileTrue(drivetrain.driveToCoralStationPoint(false));
 
-        //driver.leftBumper().whileTrue(intake.intakeAlgae());
+        // Intake and score coral on driver left bumper press
         driver.leftBumper().whileTrue(Commands.either(
-            intake.setScorerBackward(),
-            intake.setScorerBackwardSlow(),
-            () -> elevator.elevatorPosition() > 2.0));
+            intake.handleCoral(),
+            intake.scoreCoralL1(),
+            () -> elevator.elevatorPosition() > 2.0 || elevator.armPosition() < 0.0
+        ));
 
-        //driver.a().whileTrue(intake.scoreAlgae());
+        coralSensor.whileTrue(Commands.startEnd(()-> {
+          led.purplelight();
+        }, ()-> {
+         led.rainbowlight ();
+        }).ignoringDisable(true));
 
-        //driver.rightTrigger().whileTrue(intake.setScorerForward());
-        //driver.leftTrigger().whileTrue(intake.setScorerBackward());
+        // Move to coral station automatically when driver left bumper is released at L3 or L4
+        driver.leftBumper().onFalse(Commands.either(
+            elevator.moveToCoralStation(),
+            Commands.none(),
+            () -> elevator.elevatorPosition() > 18.0
+        ));
 
-        driver.x().whileTrue(intake.scoreAlgae());
-        driver.y().whileTrue(intake.setScorerForward());
+        // Eject coral on driver y press
+        driver.y().whileTrue(intake.scoreCoralL1());
 
+        // Move to coral station on operator left bumper press
         operator.leftBumper().onTrue(elevator.moveToCoralStation());
-        operator.rightBumper().whileTrue(intake.intakeAlgae());
 
+        // Move to floor pickup on operator right bumper press
+        operator.rightBumper().onTrue(Commands.sequence(
+            elevator.moveToFloorPickup(),
+            intake.handleCoral()
+        ));
+
+        // Move to L1-L4 on operator a/b/x/y press
         operator.a().onTrue(elevator.moveToL1());
         operator.b().onTrue(elevator.moveToL2());
         operator.x().onTrue(elevator.moveToL3());
         operator.y().onTrue(elevator.moveToL4());
 
+        // Move to algae low/high on operator pov down/up press
         operator.povDown().onTrue(Commands.sequence(
             elevator.moveToAlgaeLow(),
-            intake.scorerForward()));
+            intake.removeAlgae()));
         operator.povUp().onTrue(Commands.sequence(
             elevator.moveToAlgaeHigh(),
-            intake.scorerForward()));
+            intake.removeAlgae()));
 
+        // Bump elevator up/down on operator start/back press
         operator.start().onTrue(elevator.moveElevatorUp());
         operator.back().onTrue(elevator.moveElevatorDown());
 
-        operator.rightTrigger().whileTrue(climber.setClimberForward());
-        operator.leftTrigger().whileTrue(climber.setClimberBackward());
+        // Move the climber out/in on operator left/right trigger press
+        //operator.rightTrigger().whileTrue(climber.setClimberForward());
+        //operator.leftTrigger().whileTrue(climber.setClimberBackward());
+
+        //coralSensor.onTrue(getAutonomousCommand())
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
@@ -143,13 +186,18 @@ public class RobotContainer {
             Commands.waitSeconds(0.5),
             elevator.moveToCoralStation()));
         NamedCommands.registerCommand("ElevatorToL4", elevator.moveToL4());
+        NamedCommands.registerCommand("ElevatorToL2", elevator.moveToL2());
         NamedCommands.registerCommand("ScoreCoral", Commands.sequence(
             Commands.waitSeconds(0.5),
-            intake.setScorerBackward().withTimeout(0.5)
+            intake.handleCoral().withTimeout(0.5)
+        ));
+        NamedCommands.registerCommand("ScoreCoralFast", Commands.sequence(
+            Commands.waitSeconds(0.4),
+            intake.handleCoral().withTimeout(.1)
         ));
         NamedCommands.registerCommand("IntakeCoral", Commands.sequence(
-            intake.setScorerBackwardVoltage().until(() -> intake.hasCoral()),
-            intake.setScorerBackward().withTimeout(0.1)
+            intake.handleCoralWithSensor(),
+            intake.handleCoral().withTimeout(0.1)
         ));
     }
 

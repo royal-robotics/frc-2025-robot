@@ -11,16 +11,16 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "LeftLinetoJ"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ElevatorToL4"
+                  "pathName": "CentertoG"
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ElevatorToL4"
           }
         },
         {
@@ -36,7 +36,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "JtoFarLeftStation"
+                  "pathName": "FastEToFarRightStation"
                 }
               },
               {
@@ -55,35 +55,15 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "FarLeftStationToK"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 0.5
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "ElevatorToL4"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
+            "pathName": "FastFarRightStationToD"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ElevatorToL4"
           }
         },
         {
@@ -99,7 +79,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "KtoFarLeftStation"
+                  "pathName": "FastDToFarRightStation"
                 }
               },
               {
@@ -115,6 +95,24 @@
           "type": "named",
           "data": {
             "name": "IntakeCoral"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "FastFarRightStationToC"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ElevatorToL4"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ScoreCoral"
           }
         }
       ]

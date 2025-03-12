@@ -11,57 +11,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "LeftLinetoJ"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ElevatorToL4"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "ScoreCoral"
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "JtoFarLeftStation"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ElevatorToCoralStation"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "IntakeCoral"
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "FarLeftStationToK"
+                  "pathName": "FastRightLineToE"
                 }
               },
               {
@@ -71,7 +21,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 0.5
+                        "waitTime": 0.2
                       }
                     },
                     {
@@ -89,7 +39,7 @@
         {
           "type": "named",
           "data": {
-            "name": "ScoreCoral"
+            "name": "ScoreCoralFast"
           }
         },
         {
@@ -99,7 +49,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "KtoFarLeftStation"
+                  "pathName": "FastEToFarRightStation"
                 }
               },
               {
@@ -115,6 +65,113 @@
           "type": "named",
           "data": {
             "name": "IntakeCoral"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "FastFarRightStationToD"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.3
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "ElevatorToL4"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ScoreCoralFast"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "FastDToFarRightStation"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "ElevatorToCoralStation"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeCoral"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "FastFarRightStationToC"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.3
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "ElevatorToL4"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ScoreCoralFast"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ElevatorToCoralStation"
           }
         }
       ]

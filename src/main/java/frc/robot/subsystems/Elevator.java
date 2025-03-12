@@ -25,6 +25,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -46,32 +47,38 @@ public class Elevator extends SubsystemBase {
         .withNeutralMode(NeutralModeValue.Brake)
         .withInverted(InvertedValue.Clockwise_Positive);
     private final VoltageConfigs voltageConfigs = new VoltageConfigs()
-        .withPeakForwardVoltage(Volts.of(5.0))
-        .withPeakReverseVoltage(Volts.of(-5.0));
-    private final VoltageConfigs slowVoltageConfigs = new VoltageConfigs()
+        .withPeakForwardVoltage(Volts.of(12.0))
+        .withPeakReverseVoltage(Volts.of(-6.0));
+    private final VoltageConfigs armVoltageConfigs = new VoltageConfigs()
+        .withPeakForwardVoltage(Volts.of(3.0))
+        .withPeakReverseVoltage(Volts.of(-3.0));
+    private final VoltageConfigs wristVoltageConfigs = new VoltageConfigs()
         .withPeakForwardVoltage(Volts.of(3.0))
         .withPeakReverseVoltage(Volts.of(-3.0));
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
-        .withStatorCurrentLimit(Amps.of(80))
+        .withStatorCurrentLimit(Amps.of(50))
+        .withStatorCurrentLimitEnable(true);
+    private final CurrentLimitsConfigs elevatorCurrentConfigs = new CurrentLimitsConfigs()
+        .withStatorCurrentLimit(Amps.of(100))
         .withStatorCurrentLimitEnable(true);
     private final Slot0Configs elevatorPIDConfigs = new Slot0Configs()
         .withGravityType(GravityTypeValue.Elevator_Static)
-        .withKG(0.4)
-        .withKP(4.0)
+        .withKG(0.6)
+        .withKP(5.0)
         .withKI(0)
         .withKD(0.1);
     private final Slot0Configs armPIDConfigs = new Slot0Configs()
         .withGravityType(GravityTypeValue.Arm_Cosine)
-        .withKG(0.2)
+        .withKG(0.4)
         .withKP(80.0)
         .withKI(0)
-        .withKD(0);
+        .withKD(2.0);
     private final Slot0Configs wristPIDConfigs = new Slot0Configs()
         .withGravityType(GravityTypeValue.Arm_Cosine)
-        .withKG(0.2)
-        .withKP(80.0)
+        .withKG(0.3)
+        .withKP(60.0)
         .withKI(0)
-        .withKD(0);
+        .withKD(2.0);
     private final FeedbackConfigs armFeedbackConfigs = new FeedbackConfigs()
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(7);
@@ -79,7 +86,7 @@ public class Elevator extends SubsystemBase {
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(8);
     private final MagnetSensorConfigs armEncoderConfigs = new MagnetSensorConfigs()
-        .withMagnetOffset(Degrees.of(154.07))
+        .withMagnetOffset(Degrees.of(241.96))
         .withAbsoluteSensorDiscontinuityPoint(Degrees.of(200.0));
     private final MagnetSensorConfigs wristEncoderConfigs = new MagnetSensorConfigs()
         .withMagnetOffset(Degrees.of(38.0));
@@ -87,6 +94,10 @@ public class Elevator extends SubsystemBase {
     private final StatusSignal<Angle> elevatorPosition;
     private final StatusSignal<AngularVelocity> elevatorVelocity;
     private final StatusSignal<Voltage> elevatorVoltage;
+    private final StatusSignal<Temperature> elevatorTemp;
+    private final StatusSignal<Angle> elevatorPositionFollow;
+    private final StatusSignal<AngularVelocity> elevatorVelocityFollow;
+    private final StatusSignal<Voltage> elevatorVoltageFollow;
     private final StatusSignal<Angle> armPosition;
     private final StatusSignal<AngularVelocity> armVelocity;
     private final StatusSignal<Voltage> armVoltage;
@@ -149,36 +160,41 @@ public class Elevator extends SubsystemBase {
 
     private final DigitalInput bottom = new DigitalInput(0);
 
-    private final double coralElevatorInitialSetpoint = 4.0;
+    private final double coralElevatorInitialSetpoint = 6.375;
     private final double coralWristSetpoint = -84.0;
     private final double coralArmSetpoint = 115.5;
-    private final double coralElevatorSetpoint = 10.0;
+    //private final double coralElevatorSetpoint = 17.925; // For bad coral station
+    private final double coralElevatorSetpoint = 16.875;
 
-    private final double l1ArmSetpoint = 69.2;
-    private final double l1WristSetpoint = 130.0;
-    private final double l1ElevatorSetpoint = 0.5;
+    private final double floorElevatorSetpoint = 0.525;
+    private final double floorArmSetpoint = -35.0;
+    private final double floorWristSetpoint = 29.0;
+
+    private final double l1ElevatorSetpoint = 1.5;
+    private final double l1ArmSetpoint = 115.0;
+    private final double l1WristSetpoint = -80.0;
 
     private final double l2ArmSetpoint = 69.2;
-    private final double l2WristSetpoint = 59.7;
-    private final double l2ElevatorSetpoint = 6.55;
+    private final double l2WristSetpoint = 60.0;
+    private final double l2ElevatorSetpoint = 9.075;
 
     private final double l3ArmSetpoint = 69.2;
     private final double l3WristSetpoint = 60.0;
-    private final double l3ElevatorSetpoint = 16.93;
+    private final double l3ElevatorSetpoint = 23.22;
 
     private final double l4ArmSetpoint = 69.2;
-    private final double l4WristSetpoint = 40.8;
-    private final double l4ElevatorSetpoint = 31.88;
+    private final double l4WristSetpoint = 60.0;
+    private final double l4ElevatorSetpoint = 44.175;
 
-    private final double algaeLowArmSetpoint = 33.3;
-    private final double algaeLowWristSetpoint = -77.6;
-    private final double algaeLowElevatorSetpoint = 15.8;
+    private final double algaeLowArmSetpoint = 40.0;
+    private final double algaeLowWristSetpoint = 10.0;
+    private final double algaeLowElevatorSetpoint = 6;
 
-    private final double algaeHighArmSetpoint = 33.3;
-    private final double algaeHighWristSetpoint = -77.6;
-    private final double algaeHighElevatorSetpoint = 25.15;
+    private final double algaeHighArmSetpoint = 40.0;
+    private final double algaeHighWristSetpoint = 10.0;
+    private final double algaeHighElevatorSetpoint = 19.75;
 
-    private final double elevatorRotationsToInches = 0.649;
+    private final double elevatorRotationsToInches = 0.4327;
 
     private boolean elevatorOverride = false;
     private double elevatorOverrideValue = 0.0;
@@ -190,19 +206,19 @@ public class Elevator extends SubsystemBase {
     public Elevator() {
         elevator.getConfigurator().apply(outputConfigs);
         elevator.getConfigurator().apply(voltageConfigs);
-        elevator.getConfigurator().apply(currentConfigs);
+        elevator.getConfigurator().apply(elevatorCurrentConfigs);
         elevator.getConfigurator().apply(elevatorPIDConfigs);
         elevatorFollow.getConfigurator().apply(outputConfigs);
         elevatorFollow.getConfigurator().apply(voltageConfigs);
-        elevatorFollow.getConfigurator().apply(currentConfigs);
+        elevatorFollow.getConfigurator().apply(elevatorCurrentConfigs);
         elevatorFollow.getConfigurator().apply(elevatorPIDConfigs);
         arm.getConfigurator().apply(outputConfigs);
-        arm.getConfigurator().apply(slowVoltageConfigs);
+        arm.getConfigurator().apply(armVoltageConfigs);
         arm.getConfigurator().apply(currentConfigs);
         arm.getConfigurator().apply(armFeedbackConfigs);
         arm.getConfigurator().apply(armPIDConfigs);
         wrist.getConfigurator().apply(outputConfigs);
-        wrist.getConfigurator().apply(slowVoltageConfigs);
+        wrist.getConfigurator().apply(wristVoltageConfigs);
         wrist.getConfigurator().apply(currentConfigs);
         wrist.getConfigurator().apply(wristFeedbackConfigs);
         wrist.getConfigurator().apply(wristPIDConfigs);
@@ -212,6 +228,10 @@ public class Elevator extends SubsystemBase {
         elevatorPosition = elevator.getPosition();
         elevatorVelocity = elevator.getVelocity();
         elevatorVoltage = elevator.getMotorVoltage();
+        elevatorTemp = elevator.getDeviceTemp();
+        elevatorPositionFollow = elevatorFollow.getPosition();
+        elevatorVelocityFollow = elevatorFollow.getVelocity();
+        elevatorVoltageFollow = elevatorFollow.getMotorVoltage();
         armPosition = arm.getPosition();
         armVelocity = arm.getVelocity();
         armVoltage = arm.getMotorVoltage();
@@ -224,11 +244,15 @@ public class Elevator extends SubsystemBase {
         wristEncoderVelocity = wristEncoder.getVelocity();
 
         BaseStatusSignal.setUpdateFrequencyForAll(50,
-            elevatorPosition, elevatorVelocity, elevatorVoltage, armPosition, armVelocity, armVoltage,
+            elevatorPosition, elevatorVelocity, elevatorVoltage, elevatorTemp, elevatorPositionFollow,
+            elevatorVelocityFollow, elevatorVoltageFollow, armPosition, armVelocity, armVoltage,
             wristPosition, wristVelocity, wristVoltage, armEncoderPosition, armEncoderVelocity,
             wristEncoderPosition, wristEncoderVelocity);
         ParentDevice.optimizeBusUtilizationForAll(
             elevator, elevatorFollow, arm, wrist, armEncoder, wristEncoder);
+
+        elevatorPosition.waitForUpdate(0.02);
+        elevator.setPosition(Rotations.of(0.0));
 
         elevatorFollow.setControl(followRequest);
 
@@ -251,12 +275,32 @@ public class Elevator extends SubsystemBase {
         return elevatorRotationsToInches(elevatorPosition());
     }
 
+    public double elevatorPositionFollow() {
+        return elevatorPositionFollow.getValue().in(Rotations);
+    }
+
+    public double elevatorHeightFollow() {
+        return elevatorRotationsToInches(elevatorPositionFollow());
+    }
+
     public double elevatorVelocity() {
         return elevatorVelocity.getValue().in(RotationsPerSecond);
     }
 
+    public double elevatorVelocityFollow() {
+        return elevatorVelocityFollow.getValue().in(RotationsPerSecond);
+    }
+
     public double elevatorVoltage() {
         return elevatorVoltage.getValue().in(Volts);
+    }
+
+    public double elevatorVoltageFollow() {
+        return elevatorVoltageFollow.getValue().in(Volts);
+    }
+
+    public double elevatorTemp() {
+        return elevatorTemp.getValue().in(Fahrenheit);
     }
 
     public double armPosition() {
@@ -313,13 +357,13 @@ public class Elevator extends SubsystemBase {
 
     public Command moveElevatorUp() {
         return runOnce(() -> elevator.setControl(
-            positionRequest.withPosition(elevatorPosition.getValue().plus(Rotations.of(0.2)))
+            positionRequest.withPosition(elevatorPosition.getValue().plus(Rotations.of(elevatorInchesToRotations(0.125))))
         ));
     }
 
     public Command moveElevatorDown() {
         return runOnce(() -> elevator.setControl(
-            positionRequest.withPosition(elevatorPosition.getValue().minus(Rotations.of(0.2)))
+            positionRequest.withPosition(elevatorPosition.getValue().minus(Rotations.of(elevatorInchesToRotations(0.125))))
         ));
     }
 
@@ -328,40 +372,79 @@ public class Elevator extends SubsystemBase {
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(coralElevatorInitialSetpoint))
             )).until(() -> elevatorAtSetpoint(coralElevatorInitialSetpoint)),
-            run(() -> wrist.setControl(
-                positionRequest.withPosition(Degrees.of(coralWristSetpoint))
-            )).until(() -> wristAtSetpoint(coralWristSetpoint)),
-            run(() -> arm.setControl(
-                positionRequest.withPosition(Degrees.of(coralArmSetpoint))
-            )).until(() -> armAtSetpoint(coralArmSetpoint)),
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(coralArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(coralWristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(coralArmSetpoint) && wristAtSetpoint(coralWristSetpoint)),
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(coralElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(coralElevatorSetpoint))
         );
     }
 
-    public Command moveToL1() {
+    public Command moveToFloorPickup() {
         return Commands.sequence(
             run(() -> elevator.setControl(
-                positionRequest.withPosition(Rotations.of(l1ElevatorSetpoint))
-            )).until(() -> elevatorAtSetpoint(l1ElevatorSetpoint)),
-            run(() -> arm.setControl(
-                positionRequest.withPosition(Degrees.of(l1ArmSetpoint))
-            )).until(() -> armAtSetpoint(l1ArmSetpoint)),
-            run(() -> wrist.setControl(
-                positionRequest.withPosition(Degrees.of(l1WristSetpoint))
-            )).until(() -> wristAtSetpoint(l1WristSetpoint))
+                positionRequest.withPosition(Rotations.of(floorElevatorSetpoint))
+            )).until(() -> elevatorAtSetpoint(floorElevatorSetpoint)),
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(floorArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(floorWristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(floorArmSetpoint) && wristAtSetpoint(floorWristSetpoint))
         );
+    }
+
+    public Command moveToL1() {
+        return Commands.either(
+            Commands.sequence(
+                run(() -> elevator.setControl(
+                    positionRequest.withPosition(Rotations.of(l1ElevatorSetpoint))
+                )).until(() -> elevatorAtSetpoint(l1ElevatorSetpoint)),
+                run(() -> {
+                    arm.setControl(
+                        positionRequest.withPosition(Degrees.of(l1ArmSetpoint))
+                    );
+                }).until(() -> armAtSetpoint(l1ArmSetpoint)),
+                run(() -> {
+                    wrist.setControl(
+                        positionRequest.withPosition(Degrees.of(l1WristSetpoint))
+                    );
+                }).until(() -> wristAtSetpoint(l1WristSetpoint))
+            ), 
+            Commands.sequence(
+                run(() -> elevator.setControl(
+                    positionRequest.withPosition(Rotations.of(l1ElevatorSetpoint))
+                )).until(() -> elevatorAtSetpoint(l1ElevatorSetpoint)),
+                run(() -> {
+                    arm.setControl(
+                        positionRequest.withPosition(Degrees.of(l1ArmSetpoint))
+                    );
+                    wrist.setControl(
+                        positionRequest.withPosition(Degrees.of(l1WristSetpoint))
+                    );
+                }).until(() -> armAtSetpoint(l1ArmSetpoint) && wristAtSetpoint(l1WristSetpoint))
+            ), 
+            () -> elevatorPosition() < 2.0);
     }
 
     public Command moveToL2() {
         return Commands.sequence(
-            run(() -> arm.setControl(
-                positionRequest.withPosition(Degrees.of(l2ArmSetpoint))
-            )).until(() -> armAtSetpoint(l2ArmSetpoint)),
-            run(() -> wrist.setControl(
-                positionRequest.withPosition(Degrees.of(l2WristSetpoint))
-            )).until(() -> wristAtSetpoint(l2WristSetpoint)),
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(l2ArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(l2WristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(l2ArmSetpoint) && wristAtSetpoint(l2WristSetpoint)),
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(l2ElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(l2ElevatorSetpoint))
@@ -370,12 +453,14 @@ public class Elevator extends SubsystemBase {
 
     public Command moveToL3() {
         return Commands.sequence(
-            run(() -> arm.setControl(
-                positionRequest.withPosition(Degrees.of(l3ArmSetpoint))
-            )).until(() -> armAtSetpoint(l3ArmSetpoint)),
-            run(() -> wrist.setControl(
-                positionRequest.withPosition(Degrees.of(l3WristSetpoint))
-            )).until(() -> wristAtSetpoint(l3WristSetpoint)),
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(l3ArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(l3WristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(l3ArmSetpoint) && wristAtSetpoint(l3WristSetpoint)),
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(l3ElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(l3ElevatorSetpoint))
@@ -384,12 +469,14 @@ public class Elevator extends SubsystemBase {
 
     public Command moveToL4() {
         return Commands.sequence(
-            run(() -> arm.setControl(
-                positionRequest.withPosition(Degrees.of(l4ArmSetpoint))
-            )).until(() -> armAtSetpoint(l4ArmSetpoint)),
-            run(() -> wrist.setControl(
-                positionRequest.withPosition(Degrees.of(l4WristSetpoint))
-            )).until(() -> wristAtSetpoint(l4WristSetpoint)),
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(l4ArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(l4WristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(l4ArmSetpoint) && wristAtSetpoint(l4WristSetpoint)),
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(l4ElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(l4ElevatorSetpoint))
@@ -398,12 +485,14 @@ public class Elevator extends SubsystemBase {
 
     public Command moveToAlgaeLow() {
         return Commands.sequence(
-            run(() -> arm.setControl(
-                positionRequest.withPosition(Degrees.of(algaeLowArmSetpoint))
-            )).until(() -> armAtSetpoint(algaeLowArmSetpoint)),
-            run(() -> wrist.setControl(
-                positionRequest.withPosition(Degrees.of(algaeLowWristSetpoint))
-            )).until(() -> wristAtSetpoint(algaeLowWristSetpoint)),
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeLowArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeLowWristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(algaeLowArmSetpoint) && wristAtSetpoint(algaeLowWristSetpoint)),
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(algaeLowElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(algaeLowElevatorSetpoint))
@@ -412,12 +501,14 @@ public class Elevator extends SubsystemBase {
 
     public Command moveToAlgaeHigh() {
         return Commands.sequence(
-            run(() -> arm.setControl(
-                positionRequest.withPosition(Degrees.of(algaeHighArmSetpoint))
-            )).until(() -> armAtSetpoint(algaeHighArmSetpoint)),
-            run(() -> wrist.setControl(
-                positionRequest.withPosition(Degrees.of(algaeHighWristSetpoint))
-            )).until(() -> wristAtSetpoint(algaeHighWristSetpoint)),
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeHighArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeHighWristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(algaeHighArmSetpoint) && wristAtSetpoint(algaeHighWristSetpoint)),
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(algaeHighElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(algaeHighElevatorSetpoint))
@@ -468,7 +559,8 @@ public class Elevator extends SubsystemBase {
 
     public void periodic() {
         BaseStatusSignal.refreshAll(
-            elevatorPosition, elevatorVelocity, elevatorVoltage, armPosition, armVelocity, armVoltage,
+            elevatorPosition, elevatorVelocity, elevatorVoltage, elevatorTemp, elevatorPositionFollow,
+            elevatorVelocityFollow, elevatorVoltageFollow, armPosition, armVelocity, armVoltage,
             wristPosition, wristVelocity, wristVoltage, armEncoderPosition, armEncoderVelocity,
             wristEncoderPosition, wristEncoderVelocity);
 

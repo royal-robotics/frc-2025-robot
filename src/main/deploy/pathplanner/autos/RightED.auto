@@ -99,7 +99,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "DToBackup"
+                  "pathName": "DToFarRightStation"
                 }
               },
               {
@@ -109,6 +109,12 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeCoral"
           }
         }
       ]
