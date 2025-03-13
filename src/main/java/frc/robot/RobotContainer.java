@@ -193,7 +193,7 @@ public class RobotContainer {
         ));
         NamedCommands.registerCommand("ScoreCoralFast", Commands.sequence(
             Commands.waitSeconds(0.4),
-            intake.handleCoral().withTimeout(.1)
+            intake.handleCoral().withTimeout(0.2)
         ));
         NamedCommands.registerCommand("IntakeCoral", Commands.sequence(
             intake.handleCoralWithSensor(),

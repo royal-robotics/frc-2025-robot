@@ -166,7 +166,7 @@ public class Elevator extends SubsystemBase {
     //private final double coralElevatorSetpoint = 17.925; // For bad coral station
     private final double coralElevatorSetpoint = 16.875;
 
-    private final double floorElevatorSetpoint = 0.525;
+    private final double floorElevatorSetpoint = 0.55;
     private final double floorArmSetpoint = -35.0;
     private final double floorWristSetpoint = 29.0;
 
@@ -175,15 +175,15 @@ public class Elevator extends SubsystemBase {
     private final double l1WristSetpoint = -80.0;
 
     private final double l2ArmSetpoint = 69.2;
-    private final double l2WristSetpoint = 60.0;
+    private final double l2WristSetpoint = 65.0;
     private final double l2ElevatorSetpoint = 9.075;
 
     private final double l3ArmSetpoint = 69.2;
-    private final double l3WristSetpoint = 60.0;
+    private final double l3WristSetpoint = 55.0;
     private final double l3ElevatorSetpoint = 23.22;
 
     private final double l4ArmSetpoint = 69.2;
-    private final double l4WristSetpoint = 60.0;
+    private final double l4WristSetpoint = 55.0;
     private final double l4ElevatorSetpoint = 44.175;
 
     private final double algaeLowArmSetpoint = 40.0;
