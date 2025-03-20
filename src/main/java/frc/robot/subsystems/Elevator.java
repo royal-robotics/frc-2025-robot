@@ -59,7 +59,7 @@ public class Elevator extends SubsystemBase {
         .withStatorCurrentLimit(Amps.of(50))
         .withStatorCurrentLimitEnable(true);
     private final CurrentLimitsConfigs elevatorCurrentConfigs = new CurrentLimitsConfigs()
-        .withStatorCurrentLimit(Amps.of(100))
+        .withStatorCurrentLimit(Amps.of(90))
         .withStatorCurrentLimitEnable(true);
     private final Slot0Configs elevatorPIDConfigs = new Slot0Configs()
         .withGravityType(GravityTypeValue.Elevator_Static)
@@ -76,9 +76,9 @@ public class Elevator extends SubsystemBase {
     private final Slot0Configs wristPIDConfigs = new Slot0Configs()
         .withGravityType(GravityTypeValue.Arm_Cosine)
         .withKG(0.3)
-        .withKP(60.0)
+        .withKP(90.0)
         .withKI(0)
-        .withKD(2.0);
+        .withKD(0.0);
     private final FeedbackConfigs armFeedbackConfigs = new FeedbackConfigs()
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(7);
@@ -164,35 +164,35 @@ public class Elevator extends SubsystemBase {
     private final double coralWristSetpoint = -84.0;
     private final double coralArmSetpoint = 115.5;
     //private final double coralElevatorSetpoint = 17.925; // For bad coral station
-    private final double coralElevatorSetpoint = 16.875;
+    private final double coralElevatorSetpoint = 17.45;
 
     private final double floorElevatorSetpoint = 0.55;
     private final double floorArmSetpoint = -35.0;
-    private final double floorWristSetpoint = 29.0;
+    private final double floorWristSetpoint = 32.0;
 
-    private final double l1ElevatorSetpoint = 1.5;
+    private final double l1ElevatorSetpoint = 1.7;
     private final double l1ArmSetpoint = 115.0;
     private final double l1WristSetpoint = -80.0;
 
     private final double l2ArmSetpoint = 69.2;
     private final double l2WristSetpoint = 65.0;
-    private final double l2ElevatorSetpoint = 9.075;
+    private final double l2ElevatorSetpoint = 9.2;
 
     private final double l3ArmSetpoint = 69.2;
     private final double l3WristSetpoint = 55.0;
-    private final double l3ElevatorSetpoint = 23.22;
+    private final double l3ElevatorSetpoint = 23.5;
 
     private final double l4ArmSetpoint = 69.2;
     private final double l4WristSetpoint = 55.0;
-    private final double l4ElevatorSetpoint = 44.175;
+    private final double l4ElevatorSetpoint = 44.5;
 
     private final double algaeLowArmSetpoint = 40.0;
     private final double algaeLowWristSetpoint = 10.0;
-    private final double algaeLowElevatorSetpoint = 6;
+    private final double algaeLowElevatorSetpoint = 6.2;
 
     private final double algaeHighArmSetpoint = 40.0;
     private final double algaeHighWristSetpoint = 10.0;
-    private final double algaeHighElevatorSetpoint = 19.75;
+    private final double algaeHighElevatorSetpoint = 20.0;
 
     private final double elevatorRotationsToInches = 0.4327;
 
@@ -351,8 +351,16 @@ public class Elevator extends SubsystemBase {
         return Math.abs(armPosition() - setpoint) < 5.0;
     }
 
+    public boolean armAtSetpointLoose(double setpoint) {
+        return Math.abs(armPosition() - setpoint) < 90.0;
+    }
+
     public boolean wristAtSetpoint(double setpoint) {
         return Math.abs(wristPosition() - setpoint) < 5.0;
+    }
+
+    public boolean wristAtSetpointLoose(double setpoint) {
+        return Math.abs(wristPosition() - setpoint) < 90.0;
     }
 
     public Command moveElevatorUp() {
@@ -412,7 +420,7 @@ public class Elevator extends SubsystemBase {
                     arm.setControl(
                         positionRequest.withPosition(Degrees.of(l1ArmSetpoint))
                     );
-                }).until(() -> armAtSetpoint(l1ArmSetpoint)),
+                }).until(() -> armAtSetpointLoose(l1ArmSetpoint)),
                 run(() -> {
                     wrist.setControl(
                         positionRequest.withPosition(Degrees.of(l1WristSetpoint))

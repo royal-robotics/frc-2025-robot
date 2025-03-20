@@ -509,6 +509,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 closestNearStation = thirteenNear;
             }
         }
+
+        SmartDashboard.putNumber("Closest Reef Tag", closestReefTag);
+        SmartDashboard.putNumber("Closes Station Tag", closestCoralStationTag);
     }
 
     private void startSimThread() {

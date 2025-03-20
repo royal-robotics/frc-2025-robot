@@ -6,25 +6,15 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.util.Set;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.AddressableLED;
-import edu.wpi.first.wpilibj.AddressableLEDBuffer;
-import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -40,10 +30,10 @@ import frc.robot.subsystems.LED;
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(2).in(RadiansPerSecond); // 2 rotations per second max angular velocity
-    private double NormalSpeed = MaxSpeed * 0.8; // Normal drive speed is 80% of max speed
-    private double NormalAngularRate = MaxAngularRate * 0.8; // Normal rotation rate is 80% of max rotation rate
+    private double NormalSpeed = MaxSpeed * 0.75; // Normal drive speed is 75% of max speed
+    private double NormalAngularRate = MaxAngularRate * 0.75; // Normal rotation rate is 75% of max rotation rate
     private double SlowSpeed = MaxSpeed * 0.25; // Slow drive speed is 25% of max speed
-    private double SlowAngularRate = MaxAngularRate * 0.25; // Slow rotation rate is 25% of max rotation rate
+    private double SlowAngularRate = MaxAngularRate * 0.225; // Slow rotation rate is 22.5% of max rotation rate
 
     // Drive settings
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -124,7 +114,10 @@ public class RobotContainer {
 
         // Intake and score coral on driver left bumper press
         driver.leftBumper().whileTrue(Commands.either(
-            intake.handleCoral(),
+            Commands.either(
+                intake.scoreCoralL3(),
+                intake.handleCoral(),
+                () -> elevator.elevatorPosition() > 22.0 && elevator.elevatorPosition() < 25.0),
             intake.scoreCoralL1(),
             () -> elevator.elevatorPosition() > 2.0 || elevator.armPosition() < 0.0
         ));
@@ -175,8 +168,6 @@ public class RobotContainer {
         // Move the climber out/in on operator left/right trigger press
         //operator.rightTrigger().whileTrue(climber.setClimberForward());
         //operator.leftTrigger().whileTrue(climber.setClimberBackward());
-
-        //coralSensor.onTrue(getAutonomousCommand())
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

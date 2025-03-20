@@ -1,0 +1,55 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "SuperFastRightLineToE"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "SuperFastEToRightCoral"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "SuperFastRightCoralToC"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "SuperFastCToCenterCoral"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "SuperFastCenterCoralToB"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "SuperFastBToLeftCoral"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "SuperFastLeftCoralToA"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

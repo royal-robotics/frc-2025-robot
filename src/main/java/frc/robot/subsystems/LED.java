@@ -6,16 +6,11 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.lang.reflect.Constructor;
-
-import org.w3c.dom.css.RGBColor;
-
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** Add your docs here. */
@@ -27,12 +22,14 @@ public class LED extends SubsystemBase{
 
     
     public final LEDPattern purplePattern = LEDPattern.solid(Color.kPurple);
+    public final LEDPattern dimPurplePattern = purplePattern.atBrightness(Percent.of(10));
     public final LEDPattern greenPattern = LEDPattern.solid(Color.kGreen);
     public final LEDPattern goldPattern = LEDPattern.solid(new Color(135,110,0));
     public final LEDPattern dimGoldPattern = goldPattern.atBrightness(Percent.of(50));
     public final LEDPattern rainbowPattern = LEDPattern.rainbow(255,255);
     public final LEDPattern rainbowScroll = rainbowPattern.scrollAtAbsoluteSpeed(FeetPerSecond.of(0.5), Feet.of(1.0/12.0));
-    public  LEDPattern patternToApply = rainbowScroll;
+    public final LEDPattern dimRainbowPattern = rainbowScroll.atBrightness(Percent.of(10));
+    public  LEDPattern patternToApply = dimRainbowPattern;
 
     public LED () {
 
@@ -58,7 +55,7 @@ public class LED extends SubsystemBase{
     }
 
     public void purplelight () {
-        patternToApply = purplePattern;
+        patternToApply = dimPurplePattern;
        }
 
     public void goldlight () {
@@ -66,7 +63,7 @@ public class LED extends SubsystemBase{
        }
 
     public void rainbowlight () {
-      patternToApply = rainbowScroll;
+      patternToApply = dimRainbowPattern;
     }
 
 
