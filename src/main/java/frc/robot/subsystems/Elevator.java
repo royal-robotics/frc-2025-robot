@@ -163,8 +163,8 @@ public class Elevator extends SubsystemBase {
     private final double coralElevatorInitialSetpoint = 6.375;
     private final double coralWristSetpoint = -84.0;
     private final double coralArmSetpoint = 115.5;
-    //private final double coralElevatorSetpoint = 17.925; // For bad coral station
-    private final double coralElevatorSetpoint = 17.45;
+    private final double coralElevatorSetpoint = 18.3; // For bad coral station
+    //private final double coralElevatorSetpoint = 17.45;
 
     private final double floorElevatorSetpoint = 0.55;
     private final double floorArmSetpoint = -35.0;
@@ -193,6 +193,14 @@ public class Elevator extends SubsystemBase {
     private final double algaeHighArmSetpoint = 40.0;
     private final double algaeHighWristSetpoint = 10.0;
     private final double algaeHighElevatorSetpoint = 20.0;
+
+    private final double algaeScoreLowArmSetpoint = 56.0;
+    private final double algaeScoreLowWristSetpoint = 74.0;
+    private final double algaeScoreLowElevatorSetpoint = 7.7;
+
+    private final double algaeScoreHighArmSetpoint = 56.0;
+    private final double algaeScoreHighWristSetpoint = 74.0;
+    private final double algaeScoreHighElevatorSetpoint = 21.5;
 
     private final double elevatorRotationsToInches = 0.4327;
 
@@ -520,6 +528,38 @@ public class Elevator extends SubsystemBase {
             run(() -> elevator.setControl(
                 positionRequest.withPosition(Rotations.of(algaeHighElevatorSetpoint))
             )).until(() -> elevatorAtSetpoint(algaeHighElevatorSetpoint))
+        );
+    }
+
+    public Command moveToAlgaeScoreLow() {
+        return Commands.sequence(
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeScoreLowArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeScoreLowWristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(algaeScoreLowArmSetpoint) && wristAtSetpoint(algaeScoreLowWristSetpoint)),
+            run(() -> elevator.setControl(
+                positionRequest.withPosition(Rotations.of(algaeScoreLowElevatorSetpoint))
+            )).until(() -> elevatorAtSetpoint(algaeScoreLowElevatorSetpoint))
+        );
+    }
+
+    public Command moveToAlgaeScoreHigh() {
+        return Commands.sequence(
+            run(() -> {
+                arm.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeScoreHighArmSetpoint))
+                );
+                wrist.setControl(
+                    positionRequest.withPosition(Degrees.of(algaeScoreHighWristSetpoint))
+                );
+            }).until(() -> armAtSetpoint(algaeScoreHighArmSetpoint) && wristAtSetpoint(algaeScoreHighWristSetpoint)),
+            run(() -> elevator.setControl(
+                positionRequest.withPosition(Rotations.of(algaeScoreHighElevatorSetpoint))
+            )).until(() -> elevatorAtSetpoint(algaeScoreHighElevatorSetpoint))
         );
     }
 

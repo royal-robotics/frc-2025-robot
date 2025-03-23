@@ -119,7 +119,7 @@ public class RobotContainer {
                 intake.handleCoral(),
                 () -> elevator.elevatorPosition() > 22.0 && elevator.elevatorPosition() < 25.0),
             intake.scoreCoralL1(),
-            () -> elevator.elevatorPosition() > 2.0 || elevator.armPosition() < 0.0
+            () -> elevator.elevatorPosition() > 4.0 || elevator.armPosition() < 0.0
         ));
 
         coralSensor.whileTrue(Commands.startEnd(()-> {
@@ -132,7 +132,7 @@ public class RobotContainer {
         driver.leftBumper().onFalse(Commands.either(
             elevator.moveToCoralStation(),
             Commands.none(),
-            () -> elevator.elevatorPosition() > 18.0
+            () -> elevator.elevatorPosition() > 20.0
         ));
 
         // Eject coral on driver y press
@@ -160,14 +160,16 @@ public class RobotContainer {
         operator.povUp().onTrue(Commands.sequence(
             elevator.moveToAlgaeHigh(),
             intake.removeAlgae()));
+        operator.povRight().onTrue(elevator.moveToAlgaeScoreLow());
+        operator.povLeft().onTrue(elevator.moveToAlgaeScoreHigh());
 
         // Bump elevator up/down on operator start/back press
         operator.start().onTrue(elevator.moveElevatorUp());
         operator.back().onTrue(elevator.moveElevatorDown());
 
         // Move the climber out/in on operator left/right trigger press
-        //operator.rightTrigger().whileTrue(climber.setClimberForward());
-        //operator.leftTrigger().whileTrue(climber.setClimberBackward());
+        operator.rightTrigger().whileTrue(climber.setClimberForward());
+        operator.leftTrigger().whileTrue(climber.setClimberBackward());
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
@@ -183,12 +185,16 @@ public class RobotContainer {
             intake.handleCoral().withTimeout(0.5)
         ));
         NamedCommands.registerCommand("ScoreCoralFast", Commands.sequence(
-            Commands.waitSeconds(0.4),
+            Commands.waitSeconds(0.3),
             intake.handleCoral().withTimeout(0.2)
         ));
         NamedCommands.registerCommand("IntakeCoral", Commands.sequence(
             intake.handleCoralWithSensor(),
             intake.handleCoral().withTimeout(0.1)
+        ));
+        NamedCommands.registerCommand("IntakeCoralGround", Commands.sequence(
+            elevator.moveToFloorPickup(),
+            intake.handleCoral()
         ));
     }
 

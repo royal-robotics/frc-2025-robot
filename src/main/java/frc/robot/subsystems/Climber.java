@@ -82,16 +82,16 @@ public class Climber extends SubsystemBase {
 
     public Command setClimberForward() {
         return startEnd(
-            () -> climber.setControl(voltageRequest.withOutput(Volts.of(1))),
+            () -> climber.setControl(voltageRequest.withOutput(Volts.of(4))),
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(0)))
-        );
+        ).onlyWhile(() -> climberPosition() < 90.0);
     }
 
     public Command setClimberBackward() {
         return startEnd(
-            () -> climber.setControl(voltageRequest.withOutput(Volts.of(-1))),
+            () -> climber.setControl(voltageRequest.withOutput(Volts.of(-4))),
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(0)))
-        );
+        ).onlyWhile(() -> climberPosition() > -25.0);
     }
 
     public Command setCoast() {
