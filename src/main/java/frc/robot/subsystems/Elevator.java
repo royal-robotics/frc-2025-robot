@@ -56,10 +56,10 @@ public class Elevator extends SubsystemBase {
         .withPeakForwardVoltage(Volts.of(3.0))
         .withPeakReverseVoltage(Volts.of(-3.0));
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
-        .withStatorCurrentLimit(Amps.of(50))
+        .withStatorCurrentLimit(Amps.of(40))
         .withStatorCurrentLimitEnable(true);
     private final CurrentLimitsConfigs elevatorCurrentConfigs = new CurrentLimitsConfigs()
-        .withStatorCurrentLimit(Amps.of(90))
+        .withStatorCurrentLimit(Amps.of(80))
         .withStatorCurrentLimitEnable(true);
     private final Slot0Configs elevatorPIDConfigs = new Slot0Configs()
         .withGravityType(GravityTypeValue.Elevator_Static)
@@ -163,8 +163,8 @@ public class Elevator extends SubsystemBase {
     private final double coralElevatorInitialSetpoint = 6.375;
     private final double coralWristSetpoint = -84.0;
     private final double coralArmSetpoint = 115.5;
-    private final double coralElevatorSetpoint = 18.3; // For bad coral station
-    //private final double coralElevatorSetpoint = 17.45;
+    //private final double coralElevatorSetpoint = 18.3; // For bad coral station
+    private final double coralElevatorSetpoint = 17.45;
 
     private final double floorElevatorSetpoint = 0.55;
     private final double floorArmSetpoint = -35.0;
@@ -183,7 +183,7 @@ public class Elevator extends SubsystemBase {
     private final double l3ElevatorSetpoint = 23.5;
 
     private final double l4ArmSetpoint = 69.2;
-    private final double l4WristSetpoint = 55.0;
+    private final double l4WristSetpoint = 50.0;
     private final double l4ElevatorSetpoint = 44.5;
 
     private final double algaeLowArmSetpoint = 40.0;

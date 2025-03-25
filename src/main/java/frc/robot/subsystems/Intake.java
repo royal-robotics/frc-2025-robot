@@ -28,7 +28,7 @@ public class Intake extends SubsystemBase {
     private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs()
         .withNeutralMode(NeutralModeValue.Brake);
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
-        .withStatorCurrentLimit(Amps.of(100))
+        .withStatorCurrentLimit(Amps.of(90))
         .withStatorCurrentLimitEnable(true);
     private final Slot0Configs scorerPIDConfigs = new Slot0Configs()
         .withKP(30)
@@ -78,6 +78,12 @@ public class Intake extends SubsystemBase {
     public Command setScorerPosition() {
         return runOnce(
             () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
+        );
+    }
+
+    public Command runScorer() {
+        return runOnce(
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-3.0)))
         );
     }
 

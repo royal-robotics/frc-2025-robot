@@ -8,6 +8,8 @@ import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
@@ -33,11 +35,15 @@ public class Climber extends SubsystemBase {
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
         .withStatorCurrentLimit(Amps.of(80))
         .withStatorCurrentLimitEnable(true);
+    private final Slot0Configs pidConfigs = new Slot0Configs()
+        .withKP(400.0)
+        .withKI(0.0)
+        .withKD(0.0);
     private final FeedbackConfigs feedbackConfigs = new FeedbackConfigs()
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(5);
     private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs()
-        .withMagnetOffset(Degrees.of(-68.5))
+        .withMagnetOffset(Degrees.of(31.5))
         .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
     
     private final StatusSignal<Angle> climberPosition;
@@ -45,13 +51,17 @@ public class Climber extends SubsystemBase {
     private final StatusSignal<Angle> climberEncoderPosition;
 
     private final VoltageOut voltageRequest = new VoltageOut(Volts.of(0));
+    private final PositionVoltage positionRequest = new PositionVoltage(Degrees.of(0.0));
 
-    // min -73, max 45, start 22
+    private final double outAngle = 35.0;
+    private final double inAngle = -80.0;
+    private final double resetAngle = -40.0;
 
     public Climber() {
         climber.getConfigurator().apply(outputConfigs);
         climber.getConfigurator().apply(currentConfigs);
         climber.getConfigurator().apply(feedbackConfigs);
+        climber.getConfigurator().apply(pidConfigs);
         climberEncoder.getConfigurator().apply(encoderConfigs);
 
         climberPosition = climber.getPosition();
@@ -80,18 +90,40 @@ public class Climber extends SubsystemBase {
         return climberEncoderPosition.getValue().in(Degrees);
     }
 
+    public boolean climberAtSetpoint(double setpoint) {
+        return Math.abs(climberPosition() - setpoint) < 5.0;
+    }
+
+    public Command moveClimberOut() {
+        return run(() -> climber.setControl(
+            positionRequest.withPosition(Degrees.of(outAngle))
+        )).until(() -> climberAtSetpoint(outAngle));
+    }
+
+    public Command moveClimberIn() {
+        return run(() -> climber.setControl(
+            positionRequest.withPosition(Degrees.of(inAngle))
+        )).until(() -> climberAtSetpoint(inAngle));
+    }
+
+    public Command moveClimberReset() {
+        return run(() -> climber.setControl(
+            positionRequest.withPosition(Degrees.of(resetAngle))
+        )).until(() -> climberAtSetpoint(resetAngle));
+    }
+
     public Command setClimberForward() {
         return startEnd(
-            () -> climber.setControl(voltageRequest.withOutput(Volts.of(4))),
+            () -> climber.setControl(voltageRequest.withOutput(Volts.of(12))),
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(0)))
-        ).onlyWhile(() -> climberPosition() < 90.0);
+        ).onlyWhile(() -> climberPosition() < 35.0);
     }
 
     public Command setClimberBackward() {
         return startEnd(
-            () -> climber.setControl(voltageRequest.withOutput(Volts.of(-4))),
+            () -> climber.setControl(voltageRequest.withOutput(Volts.of(-12))),
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(0)))
-        ).onlyWhile(() -> climberPosition() > -25.0);
+        ).onlyWhile(() -> climberPosition() > -80.0);
     }
 
     public Command setCoast() {

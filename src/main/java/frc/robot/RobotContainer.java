@@ -108,10 +108,6 @@ public class RobotContainer {
         driver.leftTrigger().whileTrue(drivetrain.driveToReefPoint(true));
         driver.rightTrigger().whileTrue(drivetrain.driveToReefPoint(false));
 
-        // Drive to far/near coral station points on driver b/a press
-        driver.b().whileTrue(drivetrain.driveToCoralStationPoint(true));
-        driver.a().whileTrue(drivetrain.driveToCoralStationPoint(false));
-
         // Intake and score coral on driver left bumper press
         driver.leftBumper().whileTrue(Commands.either(
             Commands.either(
@@ -122,11 +118,13 @@ public class RobotContainer {
             () -> elevator.elevatorPosition() > 4.0 || elevator.armPosition() < 0.0
         ));
 
-        coralSensor.whileTrue(Commands.startEnd(()-> {
+        coralSensor.onTrue(Commands.runOnce(()-> {
           led.purplelight();
-        }, ()-> {
-         led.rainbowlight ();
         }).ignoringDisable(true));
+
+        coralSensor.onFalse(Commands.runOnce(()-> {
+            led.rainbowlight();
+          }).ignoringDisable(true));
 
         // Move to coral station automatically when driver left bumper is released at L3 or L4
         driver.leftBumper().onFalse(Commands.either(
@@ -138,14 +136,17 @@ public class RobotContainer {
         // Eject coral on driver y press
         driver.y().whileTrue(intake.scoreCoralL1());
 
+        driver.b().onTrue(climber.moveClimberOut());
+        driver.a().onTrue(climber.moveClimberIn());
+        driver.x().onTrue(climber.moveClimberReset());
+
         // Move to coral station on operator left bumper press
         operator.leftBumper().onTrue(elevator.moveToCoralStation());
 
         // Move to floor pickup on operator right bumper press
         operator.rightBumper().onTrue(Commands.sequence(
             elevator.moveToFloorPickup(),
-            intake.handleCoral()
-        ));
+            intake.runScorer()));
 
         // Move to L1-L4 on operator a/b/x/y press
         operator.a().onTrue(elevator.moveToL1());
@@ -160,8 +161,14 @@ public class RobotContainer {
         operator.povUp().onTrue(Commands.sequence(
             elevator.moveToAlgaeHigh(),
             intake.removeAlgae()));
-        operator.povRight().onTrue(elevator.moveToAlgaeScoreLow());
-        operator.povLeft().onTrue(elevator.moveToAlgaeScoreHigh());
+        operator.povRight().onTrue(Commands.sequence(
+            elevator.moveToAlgaeScoreLow(),
+            intake.scoreCoralL1().withTimeout(0.03),
+            Commands.runOnce(()->led.greenlight())));
+        operator.povLeft().onTrue(Commands.sequence(
+            elevator.moveToAlgaeScoreHigh(),
+            intake.scoreCoralL1().withTimeout(0.03),
+            Commands.runOnce(()->led.greenlight())));
 
         // Bump elevator up/down on operator start/back press
         operator.start().onTrue(elevator.moveElevatorUp());

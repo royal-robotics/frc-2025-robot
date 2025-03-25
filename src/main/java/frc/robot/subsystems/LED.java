@@ -24,6 +24,7 @@ public class LED extends SubsystemBase{
     public final LEDPattern purplePattern = LEDPattern.solid(Color.kPurple);
     public final LEDPattern dimPurplePattern = purplePattern.atBrightness(Percent.of(10));
     public final LEDPattern greenPattern = LEDPattern.solid(Color.kGreen);
+    public final LEDPattern dimgreenPattern = greenPattern.atBrightness(Percent.of(10));
     public final LEDPattern goldPattern = LEDPattern.solid(new Color(135,110,0));
     public final LEDPattern dimGoldPattern = goldPattern.atBrightness(Percent.of(50));
     public final LEDPattern rainbowPattern = LEDPattern.rainbow(255,255);
@@ -51,7 +52,7 @@ public class LED extends SubsystemBase{
     }
 
     public void greenlight () {
-     patternToApply = greenPattern;
+     patternToApply = dimgreenPattern;
     }
 
     public void purplelight () {
