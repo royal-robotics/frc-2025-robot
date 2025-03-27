@@ -146,7 +146,8 @@ public class RobotContainer {
         // Move to floor pickup on operator right bumper press
         operator.rightBumper().onTrue(Commands.sequence(
             elevator.moveToFloorPickup(),
-            intake.runScorer()));
+            intake.runScorer().until(() -> intake.hasCoral()),
+            intake.handleCoral().withTimeout(0.1)));
 
         // Move to L1-L4 on operator a/b/x/y press
         operator.a().onTrue(elevator.moveToL1());
@@ -163,11 +164,11 @@ public class RobotContainer {
             intake.removeAlgae()));
         operator.povRight().onTrue(Commands.sequence(
             elevator.moveToAlgaeScoreLow(),
-            intake.scoreCoralL1().withTimeout(0.03),
+            intake.scoreCoralL1().withTimeout(0.05),
             Commands.runOnce(()->led.greenlight())));
         operator.povLeft().onTrue(Commands.sequence(
             elevator.moveToAlgaeScoreHigh(),
-            intake.scoreCoralL1().withTimeout(0.03),
+            intake.scoreCoralL1().withTimeout(0.05),
             Commands.runOnce(()->led.greenlight())));
 
         // Bump elevator up/down on operator start/back press
@@ -201,8 +202,11 @@ public class RobotContainer {
         ));
         NamedCommands.registerCommand("IntakeCoralGround", Commands.sequence(
             elevator.moveToFloorPickup(),
-            intake.handleCoral()
+            intake.handleCoralWithSensor(),
+            intake.handleCoral().withTimeout(0.1)
         ));
+        NamedCommands.registerCommand("AlgaeScoreHigh", elevator.moveToAlgaeScoreHigh());
+        NamedCommands.registerCommand("AlgaeDescoreLow", elevator.moveToAlgaeLow());
     }
 
     public Command getAutonomousCommand() {

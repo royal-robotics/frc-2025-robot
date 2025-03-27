@@ -33,7 +33,7 @@ public class Climber extends SubsystemBase {
     private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs()
         .withNeutralMode(NeutralModeValue.Brake);
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
-        .withStatorCurrentLimit(Amps.of(80))
+        .withStatorCurrentLimit(Amps.of(95))
         .withStatorCurrentLimitEnable(true);
     private final Slot0Configs pidConfigs = new Slot0Configs()
         .withKP(400.0)
@@ -43,7 +43,7 @@ public class Climber extends SubsystemBase {
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(5);
     private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs()
-        .withMagnetOffset(Degrees.of(31.5))
+        .withMagnetOffset(Degrees.of(-150))
         .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
     
     private final StatusSignal<Angle> climberPosition;
@@ -55,7 +55,7 @@ public class Climber extends SubsystemBase {
 
     private final double outAngle = 35.0;
     private final double inAngle = -80.0;
-    private final double resetAngle = -40.0;
+    private final double resetAngle = -42.0;
 
     public Climber() {
         climber.getConfigurator().apply(outputConfigs);
@@ -123,7 +123,7 @@ public class Climber extends SubsystemBase {
         return startEnd(
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(-12))),
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(0)))
-        ).onlyWhile(() -> climberPosition() > -80.0);
+        ).onlyWhile(() -> climberPosition() > -85.0);
     }
 
     public Command setCoast() {

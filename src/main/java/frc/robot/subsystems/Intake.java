@@ -19,6 +19,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 @Logged
@@ -28,7 +29,7 @@ public class Intake extends SubsystemBase {
     private final MotorOutputConfigs outputConfigs = new MotorOutputConfigs()
         .withNeutralMode(NeutralModeValue.Brake);
     private final CurrentLimitsConfigs currentConfigs = new CurrentLimitsConfigs()
-        .withStatorCurrentLimit(Amps.of(90))
+        .withStatorCurrentLimit(Amps.of(100))
         .withStatorCurrentLimitEnable(true);
     private final Slot0Configs scorerPIDConfigs = new Slot0Configs()
         .withKP(30)
@@ -82,7 +83,7 @@ public class Intake extends SubsystemBase {
     }
 
     public Command runScorer() {
-        return runOnce(
+        return run(
             () -> scorer.setControl(voltageRequest.withOutput(Volts.of(-3.0)))
         );
     }
