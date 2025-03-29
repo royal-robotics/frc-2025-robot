@@ -43,7 +43,7 @@ public class Climber extends SubsystemBase {
         .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
         .withFeedbackRemoteSensorID(5);
     private final MagnetSensorConfigs encoderConfigs = new MagnetSensorConfigs()
-        .withMagnetOffset(Degrees.of(-150))
+        .withMagnetOffset(Degrees.of(-135))
         .withSensorDirection(SensorDirectionValue.Clockwise_Positive);
     
     private final StatusSignal<Angle> climberPosition;
@@ -54,7 +54,7 @@ public class Climber extends SubsystemBase {
     private final PositionVoltage positionRequest = new PositionVoltage(Degrees.of(0.0));
 
     private final double outAngle = 35.0;
-    private final double inAngle = -80.0;
+    private final double inAngle = -105.0;
     private final double resetAngle = -42.0;
 
     public Climber() {
@@ -123,7 +123,7 @@ public class Climber extends SubsystemBase {
         return startEnd(
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(-12))),
             () -> climber.setControl(voltageRequest.withOutput(Volts.of(0)))
-        ).onlyWhile(() -> climberPosition() > -85.0);
+        ).onlyWhile(() -> climberPosition() > -110);
     }
 
     public Command setCoast() {

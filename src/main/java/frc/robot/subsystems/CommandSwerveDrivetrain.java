@@ -69,31 +69,31 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         8.0, 0.0, 0.0, new Constraints(1.0, 3.0));
 
     // Red REEF Positions
-    private final Pose2d sixLeft = new Pose2d(13.57, 2.83, new Rotation2d(Degrees.of(300)));
+    private final Pose2d sixLeft = new Pose2d(13.57, 2.82, new Rotation2d(Degrees.of(300)));
     private final Pose2d sixRight = new Pose2d(13.86, 2.99, new Rotation2d(Degrees.of(300)));
-    private final Pose2d sevenLeft = new Pose2d(14.37, 3.86, new Rotation2d(Degrees.of(0)));
-    private final Pose2d sevenRight = new Pose2d(14.37, 4.19, new Rotation2d(Degrees.of(0)));
+    private final Pose2d sevenLeft = new Pose2d(14.37, 3.87, new Rotation2d(Degrees.of(0)));
+    private final Pose2d sevenRight = new Pose2d(14.37, 4.20, new Rotation2d(Degrees.of(0)));
     private final Pose2d eightLeft = new Pose2d(13.86, 5.08, new Rotation2d(Degrees.of(60)));
-    private final Pose2d eightRight = new Pose2d(13.57, 5.23, new Rotation2d(Degrees.of(60)));
-    private final Pose2d nineLeft = new Pose2d(12.56, 5.23, new Rotation2d(Degrees.of(120)));
+    private final Pose2d eightRight = new Pose2d(13.57, 5.24, new Rotation2d(Degrees.of(60)));
+    private final Pose2d nineLeft = new Pose2d(12.56, 5.24, new Rotation2d(Degrees.of(120)));
     private final Pose2d nineRight = new Pose2d(12.28, 5.08, new Rotation2d(Degrees.of(120)));
-    private final Pose2d tenLeft = new Pose2d(11.77, 4.19, new Rotation2d(Degrees.of(180)));
-    private final Pose2d tenRight = new Pose2d(11.77, 3.86, new Rotation2d(Degrees.of(180)));
+    private final Pose2d tenLeft = new Pose2d(11.77, 4.20, new Rotation2d(Degrees.of(180)));
+    private final Pose2d tenRight = new Pose2d(11.77, 3.87, new Rotation2d(Degrees.of(180)));
     private final Pose2d elevenLeft = new Pose2d(12.28, 2.99, new Rotation2d(Degrees.of(240)));
-    private final Pose2d elevenRight = new Pose2d(12.56, 2.83, new Rotation2d(Degrees.of(240)));
+    private final Pose2d elevenRight = new Pose2d(12.56, 2.82, new Rotation2d(Degrees.of(240)));
 
     // Blue REEF Positions
     private final Pose2d seventeenLeft = new Pose2d(3.70, 2.99, new Rotation2d(Degrees.of(60)));
-    private final Pose2d seventeenRight = new Pose2d(3.98, 2.83, new Rotation2d(Degrees.of(60)));
-    private final Pose2d eighteenLeft = new Pose2d(3.19, 4.19, new Rotation2d(Degrees.of(0)));
-    private final Pose2d eighteenRight = new Pose2d(3.19, 3.86, new Rotation2d(Degrees.of(0)));
-    private final Pose2d nineteenLeft = new Pose2d(3.98, 5.23, new Rotation2d(Degrees.of(300)));
+    private final Pose2d seventeenRight = new Pose2d(3.98, 2.82, new Rotation2d(Degrees.of(60)));
+    private final Pose2d eighteenLeft = new Pose2d(3.19, 4.20, new Rotation2d(Degrees.of(0)));
+    private final Pose2d eighteenRight = new Pose2d(3.19, 3.87, new Rotation2d(Degrees.of(0)));
+    private final Pose2d nineteenLeft = new Pose2d(3.98, 5.24, new Rotation2d(Degrees.of(300)));
     private final Pose2d nineteenRight = new Pose2d(3.70, 5.08, new Rotation2d(Degrees.of(300)));
     private final Pose2d twentyLeft = new Pose2d(5.28, 5.08, new Rotation2d(Degrees.of(240)));
-    private final Pose2d twentyRight = new Pose2d(4.99, 5.23, new Rotation2d(Degrees.of(240)));
-    private final Pose2d twentyOneLeft = new Pose2d(5.79, 3.86, new Rotation2d(Degrees.of(180)));
-    private final Pose2d twentyOneRight = new Pose2d(5.79, 4.19, new Rotation2d(Degrees.of(180)));
-    private final Pose2d twentyTwoLeft = new Pose2d(4.99, 2.83, new Rotation2d(Degrees.of(120)));
+    private final Pose2d twentyRight = new Pose2d(4.99, 5.24, new Rotation2d(Degrees.of(240)));
+    private final Pose2d twentyOneLeft = new Pose2d(5.79, 3.87, new Rotation2d(Degrees.of(180)));
+    private final Pose2d twentyOneRight = new Pose2d(5.79, 4.20, new Rotation2d(Degrees.of(180)));
+    private final Pose2d twentyTwoLeft = new Pose2d(4.99, 2.82, new Rotation2d(Degrees.of(120)));
     private final Pose2d twentyTwoRight = new Pose2d(5.28, 2.99, new Rotation2d(Degrees.of(120)));
 
     // Red CORAL STATION Positions

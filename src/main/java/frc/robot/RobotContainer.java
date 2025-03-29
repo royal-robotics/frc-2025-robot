@@ -164,11 +164,11 @@ public class RobotContainer {
             intake.removeAlgae()));
         operator.povRight().onTrue(Commands.sequence(
             elevator.moveToAlgaeScoreLow(),
-            intake.scoreCoralL1().withTimeout(0.05),
+            intake.scoreCoralL1().withTimeout(0.01),
             Commands.runOnce(()->led.greenlight())));
         operator.povLeft().onTrue(Commands.sequence(
             elevator.moveToAlgaeScoreHigh(),
-            intake.scoreCoralL1().withTimeout(0.05),
+            intake.scoreCoralL1().withTimeout(0.01),
             Commands.runOnce(()->led.greenlight())));
 
         // Bump elevator up/down on operator start/back press
@@ -203,7 +203,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("IntakeCoralGround", Commands.sequence(
             elevator.moveToFloorPickup(),
             intake.handleCoralWithSensor(),
-            intake.handleCoral().withTimeout(0.1)
+            intake.handleCoral().withTimeout(0.5)
         ));
         NamedCommands.registerCommand("AlgaeScoreHigh", elevator.moveToAlgaeScoreHigh());
         NamedCommands.registerCommand("AlgaeDescoreLow", elevator.moveToAlgaeLow());
