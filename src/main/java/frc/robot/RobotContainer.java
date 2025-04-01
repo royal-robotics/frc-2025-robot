@@ -104,6 +104,9 @@ public class RobotContainer {
         // Reset the field-centric heading on driver start press
         driver.start().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
+        // Reset Elevator to 0
+        driver.back().onTrue(elevator.resetElevator());
+
         // Drive to left/right reef points on driver left/right trigger press
         driver.leftTrigger().whileTrue(drivetrain.driveToReefPoint(true));
         driver.rightTrigger().whileTrue(drivetrain.driveToReefPoint(false));
