@@ -64,35 +64,35 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Pose2d closestNearStation = new Pose2d();
 
     private final ProfiledPIDController xController = new ProfiledPIDController(
-        8.0, 0.0, 0.0, new Constraints(1.0, 3.0));
+        12.0, 0.0, 0.0, new Constraints(0.8, 3.0));
     private final ProfiledPIDController yController = new ProfiledPIDController(
-        8.0, 0.0, 0.0, new Constraints(1.0, 3.0));
+        12.0, 0.0, 0.0, new Constraints(0.8, 3.0));
 
     // Red REEF Positions
     private final Pose2d sixLeft = new Pose2d(13.574, 2.809, new Rotation2d(Degrees.of(300)));
     private final Pose2d sixRight = new Pose2d(13.862, 2.964, new Rotation2d(Degrees.of(300)));
-    private final Pose2d sevenLeft = new Pose2d(14.559, 3.861, new Rotation2d(Degrees.of(0)));
-    private final Pose2d sevenRight = new Pose2d(14.559, 4.191, new Rotation2d(Degrees.of(0)));
+    private final Pose2d sevenLeft = new Pose2d(14.359, 3.871, new Rotation2d(Degrees.of(0)));
+    private final Pose2d sevenRight = new Pose2d(14.359, 4.201, new Rotation2d(Degrees.of(0)));
     private final Pose2d eightLeft = new Pose2d(13.862, 5.088, new Rotation2d(Degrees.of(60)));
     private final Pose2d eightRight = new Pose2d(13.574, 5.243, new Rotation2d(Degrees.of(60)));
     private final Pose2d nineLeft = new Pose2d(12.546, 5.243, new Rotation2d(Degrees.of(120)));
     private final Pose2d nineRight = new Pose2d(12.259, 5.088, new Rotation2d(Degrees.of(120)));
-    private final Pose2d tenLeft = new Pose2d(11.559, 4.191, new Rotation2d(Degrees.of(180)));
-    private final Pose2d tenRight = new Pose2d(11.559, 3.861, new Rotation2d(Degrees.of(180)));
+    private final Pose2d tenLeft = new Pose2d(11.759, 4.201, new Rotation2d(Degrees.of(180)));
+    private final Pose2d tenRight = new Pose2d(11.759, 3.871, new Rotation2d(Degrees.of(180)));
     private final Pose2d elevenLeft = new Pose2d(12.259, 2.964, new Rotation2d(Degrees.of(240)));
     private final Pose2d elevenRight = new Pose2d(12.546, 2.809, new Rotation2d(Degrees.of(240)));
 
     // Blue REEF Positions
     private final Pose2d seventeenLeft = new Pose2d(3.689, 2.964, new Rotation2d(Degrees.of(60)));
     private final Pose2d seventeenRight = new Pose2d(3.973, 2.809, new Rotation2d(Degrees.of(60)));
-    private final Pose2d eighteenLeft = new Pose2d(3.169, 4.191, new Rotation2d(Degrees.of(0)));
-    private final Pose2d eighteenRight = new Pose2d(3.169, 3.861, new Rotation2d(Degrees.of(0)));
+    private final Pose2d eighteenLeft = new Pose2d(3.169, 4.201, new Rotation2d(Degrees.of(0)));
+    private final Pose2d eighteenRight = new Pose2d(3.169, 3.871, new Rotation2d(Degrees.of(0)));
     private final Pose2d nineteenLeft = new Pose2d(3.973, 5.243, new Rotation2d(Degrees.of(300)));
     private final Pose2d nineteenRight = new Pose2d(3.689, 5.088, new Rotation2d(Degrees.of(300)));
     private final Pose2d twentyLeft = new Pose2d(5.289, 5.088, new Rotation2d(Degrees.of(240)));
     private final Pose2d twentyRight = new Pose2d(5.014, 5.243, new Rotation2d(Degrees.of(240)));
-    private final Pose2d twentyOneLeft = new Pose2d(5.809, 3.861, new Rotation2d(Degrees.of(180)));
-    private final Pose2d twentyOneRight = new Pose2d(5.809, 4.191, new Rotation2d(Degrees.of(180)));
+    private final Pose2d twentyOneLeft = new Pose2d(5.809, 3.871, new Rotation2d(Degrees.of(180)));
+    private final Pose2d twentyOneRight = new Pose2d(5.809, 4.201, new Rotation2d(Degrees.of(180)));
     private final Pose2d twentyTwoLeft = new Pose2d(5.014, 2.809, new Rotation2d(Degrees.of(120)));
     private final Pose2d twentyTwoRight = new Pose2d(5.289, 2.964, new Rotation2d(Degrees.of(120)));
 

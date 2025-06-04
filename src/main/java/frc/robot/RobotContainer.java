@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.generated.TunerConstants;
@@ -34,6 +35,9 @@ public class RobotContainer {
     private double NormalAngularRate = MaxAngularRate * 0.75; // Normal rotation rate is 75% of max rotation rate
     private double SlowSpeed = MaxSpeed * 0.25; // Slow drive speed is 25% of max speed
     private double SlowAngularRate = MaxAngularRate * 0.225; // Slow rotation rate is 22.5% of max rotation rate
+    private double BabyAngularRate = MaxAngularRate * 0.5; //Baby mode rotational rate is 50% of max rotation rate
+
+    private boolean BabyMode = false;
 
     // Drive settings
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -69,6 +73,7 @@ public class RobotContainer {
         // Place Autonomous selector on SmartDashboard
         autoChooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Mode", autoChooser);
+        SmartDashboard.putData("Baby Mode", togglesafemode());
     }
 
     private void configureBindings() {
@@ -76,22 +81,38 @@ public class RobotContainer {
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-driver.getLeftY() * NormalSpeed) // Drive forward with negative Y (forward)
+            drivetrain.applyRequest(() -> {
+                if(BabyMode) {
+                    return drive.withVelocityX(-driver.getLeftY() * SlowSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-driver.getLeftX() * SlowSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-driver.getRightX() * BabyAngularRate) // Drive counterclockwise with negative X (left)
+                    .withDeadband(SlowSpeed * 0.1).withRotationalDeadband(BabyAngularRate * 0.1); // Add a 10% deadband
+                }
+                else{
+                   return drive.withVelocityX(-driver.getLeftY() * NormalSpeed) // Drive forward with negative Y (forward)
                     .withVelocityY(-driver.getLeftX() * NormalSpeed) // Drive left with negative X (left)
                     .withRotationalRate(-driver.getRightX() * NormalAngularRate) // Drive counterclockwise with negative X (left)
-                    .withDeadband(NormalSpeed * 0.1).withRotationalDeadband(NormalAngularRate * 0.1) // Add a 10% deadband
+                    .withDeadband(NormalSpeed * 0.1).withRotationalDeadband(NormalAngularRate * 0.1); // Add a 10% deadband
+                }
+            }
+
             )
         );
 
+        //baby mode very slow
+
+
         // Drive slowly when driver right bumper is held
-        driver.rightBumper().whileTrue(
+        driver.rightBumper().whileTrue(Commands.either (Commands.sequence(
+            elevator.moveToFloorPickup(),
+            intake.runScorer().until(() -> intake.hasCoral()),
+            intake.handleCoral().withTimeout(0.1)), //babymode trigger for ground
             drivetrain.applyRequest(() -> 
                 drive.withVelocityX(-driver.getLeftY() * SlowSpeed) // Drive forward with negative Y (forward)
                     .withVelocityY(-driver.getLeftX() * SlowSpeed) // Drive left with negative X (left)
                     .withRotationalRate(-driver.getRightX() * SlowAngularRate) // Drive counterclockwise with negative X (left)
                     .withDeadband(SlowSpeed * 0.1).withRotationalDeadband(SlowAngularRate * 0.1) // Add a 10% deadband
-            )
+            ), ()->BabyMode)
         );
 
         // Run SysId routines when holding back/start and X/Y.
@@ -108,8 +129,8 @@ public class RobotContainer {
         driver.back().onTrue(elevator.resetElevator());
 
         // Drive to left/right reef points on driver left/right trigger press
-        driver.leftTrigger().whileTrue(drivetrain.driveToReefPoint(true));
-        driver.rightTrigger().whileTrue(drivetrain.driveToReefPoint(false));
+        driver.leftTrigger().whileTrue(Commands.either (intake.scoreCoralL1(), drivetrain.driveToReefPoint(true), ()->BabyMode));
+        driver.rightTrigger().whileTrue(Commands.either (Commands.none(), drivetrain.driveToReefPoint(false), ()->BabyMode));
 
         // Intake and score coral on driver left bumper press
         driver.leftBumper().whileTrue(Commands.either(
@@ -137,11 +158,10 @@ public class RobotContainer {
         ));
 
         // Eject coral on driver y press
-        driver.y().whileTrue(intake.scoreCoralL1());
-
-        driver.b().onTrue(climber.moveClimberOut());
-        driver.a().onTrue(climber.moveClimberIn());
-        driver.x().onTrue(climber.moveClimberReset());
+        driver.y().whileTrue(Commands.either (elevator.moveToL4(), intake.scoreCoralL1(), ()->BabyMode));
+        driver.b().onTrue(Commands.either (elevator.moveToL2(), climber.moveClimberOut(), ()->BabyMode));
+        driver.a().onTrue(Commands.either (elevator.moveToL1(), climber.moveClimberIn(), ()->BabyMode));
+        driver.x().onTrue(Commands.either (elevator.moveToL3(), climber.moveClimberReset(), ()->BabyMode));
 
         // Move to coral station on operator left bumper press
         operator.leftBumper().onTrue(elevator.moveToCoralStation());
@@ -219,5 +239,11 @@ public class RobotContainer {
 
     public Command resetScorer() {
         return intake.setScorerPosition();
+    }
+
+    public Command togglesafemode() {
+        return new InstantCommand(()->{
+            BabyMode = !BabyMode; 
+        }).ignoringDisable(true);
     }
 }

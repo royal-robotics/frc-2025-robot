@@ -90,7 +90,7 @@ public class Intake extends SubsystemBase {
 
     public Command scoreCoralL1() {
         return startEnd(
-            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(1.25))),
+            () -> scorer.setControl(voltageRequest.withOutput(Volts.of(0.8))),
             () -> scorer.setControl(positionRequest.withPosition(scorerPosition.getValue()))
         );
     }
